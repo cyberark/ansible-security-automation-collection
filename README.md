@@ -1,7 +1,7 @@
-cyberark_modules
-================
+ansible-security-automation-collection
+======================================
 
-Role to add CyberArk modules -- If not available from ansible core, or to get the latest.
+Collection for different modules for CyberArk Privileged Account Security Web Services to be used with Ansible, and Ansible Security Automation. 
 
 Requirements
 ------------
