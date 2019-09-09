@@ -1,0 +1,39 @@
+---
+- hosts: localhost
+
+  collections:
+    - cyberark.bizdev
+
+  tasks:
+
+    - name: Logon to CyberArk Vault using PAS Web Services SDK
+      cyberark_authentication:
+        api_base_url: "http://components.cyberark.local"
+        validate_certs: no
+        username: "bizdev"
+        password: "Cyberark1"
+
+
+    - name: Debug message
+      debug:
+        var: cyberark_session
+
+    - name: Enabling a CyberArk User and forcing a password change at next logon
+      cyberark_user:
+        username: "ansibleuser"
+        disabled: false
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: cyberarkaction
+        
+    - name: Debug message
+      debug:
+        var: cyberarkaction
+
+    - name: Logoff from CyberArk Vault
+      cyberark_authentication:
+        state: absent
+        cyberark_session: "{{ cyberark_session }}"
+
+    - name: Debug message
+      debug: var=cyberark_session

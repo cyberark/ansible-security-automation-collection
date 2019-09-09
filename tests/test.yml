@@ -1,0 +1,65 @@
+---
+- hosts: localhost
+
+  collections:
+    - cyberark.bizdev
+
+  tasks:
+
+    - name: Logon to CyberArk Vault using PAS Web Services SDK
+      cyberark_authentication:
+        api_base_url: "http://components.cyberark.local"
+        validate_certs: no
+        username: "bizdev"
+        password: "Cyberark1"
+
+
+    - name: Debug message
+      debug:
+        var: cyberark_session
+
+    - name: User
+      cyberark_user:
+        username: "testuser"
+        initial_password: "Cyberark1"
+        user_type_name: "EPVUser"
+        change_password_on_the_next_logon: false
+        group_name: "Auditors"
+        disabled: false
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: cyberarkaction
+        
+    - name: Debug message
+      debug:
+        var: cyberarkaction
+
+    - name: Account
+      cyberark_account:
+#         logging_level: DEBUG
+        identified_by: "address,username"
+        name: "EDWARD_ACCOUNT"
+        safe: "Test"
+        address: "10.0.1.20"
+        username: "james_test"
+        platform_id: WinServerLocal
+        platform_account_properties:
+            LogonDomain: "10.0.1.20"
+        secret_management:
+            automatic_management_enabled: false
+            manual_management_reason: "No Reason"
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: cyberarkaction
+      
+    - name: Debug message
+      debug:
+        var: cyberarkaction
+
+    - name: Logoff from CyberArk Vault
+      cyberark_authentication:
+        state: absent
+        cyberark_session: "{{ cyberark_session }}"
+
+    - name: Debug message
+      debug: var=cyberark_session

@@ -1,0 +1,15 @@
+namespace: "cyberark"
+name: "bizdev"
+version: "1.0.0"
+description: "CyberArk Privileged Access Security Collection"
+authors: ["Edward Nunez", "James Stutes"]
+license: ["MIT"]
+readme: README.md
+tags:
+  - CyberArk
+  - Identity
+  - Credential
+  - Secret
+  - Privileged
+  - Vault
+repository: "https://github.com/cyberark/ansible-security-automation-collection"

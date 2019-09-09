@@ -1,0 +1,48 @@
+---
+- hosts: localhost
+
+  collections:
+    - cyberark.bizdev
+
+  tasks:
+
+    - name: Logon to CyberArk Vault using PAS Web Services SDK
+      cyberark_authentication:
+        api_base_url: "http://components.cyberark.local"
+        validate_certs: no
+        username: "bizdev"
+        password: "Cyberark1"
+
+
+    - name: Debug message
+      debug:
+        var: cyberark_session
+
+    - name: Account
+      cyberark_account:
+        identified_by: "address,username"
+        safe: "Test"
+        address: "cyberark.local"
+        username: "administrator"
+        platform_id: WinServerLocal
+        platform_account_properties:
+            LogonDomain: "cyberark"
+            OwnerName: "Edward Nunez"
+        secret_management:
+            automatic_management_enabled: false
+            manual_management_reason: "This is just a test account"
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: cyberarkaction
+      
+    - name: Debug message
+      debug:
+        var: cyberarkaction
+
+    - name: Logoff from CyberArk Vault
+      cyberark_authentication:
+        state: absent
+        cyberark_session: "{{ cyberark_session }}"
+
+    - name: Debug message
+      debug: var=cyberark_session
