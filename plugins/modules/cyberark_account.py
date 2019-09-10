@@ -84,8 +84,24 @@ import sys
 import logging
 
 _empty = object()
-ansible_specific_parameters = ["state", "api_base_url", "validate_certs", "cyberark_session", "identified_by", "logging_level", "logging_file"]
-cyberark_nonremovable_properties = ["createdTime", "id", "name", "lastModifiedTime", "safeName", "secretType"]
+
+ansible_specific_parameters = ["state", "api_base_url", 
+                               "validate_certs",
+                               "cyberark_session",
+                               "identified_by",
+                               "logging_level",
+                               "logging_file",
+                               "new_secret",
+                               "secret_management.management_action", 
+                               "secret_management.new_secret",
+                               "management_action"]
+                               
+cyberark_nonremovable_properties = ["createdTime",
+                                    "id",
+                                    "name",
+                                    "lastModifiedTime",
+                                    "safeName",
+                                    "secretType"]
 removal_value = "NO_VALUE"
 
 cyberark_reference_fieldnames = {
@@ -121,7 +137,7 @@ def update_account(module, existing_account):
     state = module.params["state"]
 
     # Prepare result, end_point, and headers
-    result = {}
+    result = {"result": existing_account}
     HTTPMethod = "PATCH"
     end_point = "/PasswordVault/api/Accounts/%s" % existing_account["id"]
 
@@ -134,27 +150,32 @@ def update_account(module, existing_account):
     for parameter_name in module.params.keys():
         if parameter_name not in ansible_specific_parameters and module.params[parameter_name] is not None:
             module_parm_value = module.params[parameter_name]
-            cyberark_property_name = cyberark_reference_fieldnames[parameter_name] if parameter_name in cyberark_reference_fieldnames else parameter_name
-            existing_account_value = existing_account[cyberark_property_name] if cyberark_property_name in existing_account.keys() else None
-            
+            cyberark_property_name = referenced_value(parameter_name, cyberark_reference_fieldnames, default=parameter_name)
+            existing_account_value = referenced_value(cyberark_property_name, existing_account, keys=existing_account.keys())            
             if isinstance(module_parm_value, dict):
+                # Internal child values
                 for child_parm_name in module_parm_value.keys():
-                    child_module_parm_value = module_parm_value[child_parm_name]
-                    child_cyberark_property_name = cyberark_reference_fieldnames[child_parm_name] if child_parm_name in cyberark_reference_fieldnames else child_parm_name
-                    child_existing_account_value = existing_account_value[child_cyberark_property_name] if child_cyberark_property_name in existing_account_value.keys() else None
-                    if child_existing_account_value is not None:
-                        if child_module_parm_value == removal_value:
-                            payload["Operations"].append({"op": "remove", "path": "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)})
-                        elif child_existing_account_value != child_module_parm_value:
-                            # Updating a property
-                            payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)})
-                    elif child_module_parm_value != removal_value:
-                        # Adding a property value
-                        payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)})
+                    nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
+                    if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
+                        child_module_parm_value = module_parm_value[child_parm_name]
+                        child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames,default=child_parm_name)
+                        child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys())
+                        path_value = "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)
+                        if child_existing_account_value is not None:
+                            logging.debug("child_module_parm_value: %s  child_existing_account_value=%s  path=%s" %(child_module_parm_value, child_existing_account_value, path_value))
+                            if child_module_parm_value == removal_value:
+                                payload["Operations"].append({"op": "remove", "path": path_value})
+                            elif child_existing_account_value != child_module_parm_value:
+                                # Updating a property
+                                payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
+                        elif child_module_parm_value is not None and child_module_parm_value != removal_value:
+                            # Adding a property value
+                            payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
+                        logging.debug("parameter_name=%s  value=%s existing=%s" % (path_value, child_module_parm_value, child_existing_account_value))
             else:
                 if existing_account_value is not None:
                     if module_parm_value == removal_value:
-                        payload["Operations"].append({"op": "remove", "path": "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)})
+                        payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name})
                     elif existing_account_value != module_parm_value:
                         # Updating a property
                         payload["Operations"].append({"op": "replace", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
@@ -164,7 +185,7 @@ def update_account(module, existing_account):
                 logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
                             
     if (len(payload["Operations"]) == 0):
-        return(False, existing_account, -1)
+        return(False, result, -1)
     else:
         logging.debug("Operations => %s" % json.dumps(payload))
         try:
@@ -313,27 +334,115 @@ def delete_account(module, existing_account):
             headers=headers,
             status_code=-1)
 
+def reset_account_if_needed(module, existing_account):
+
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+
+    # Credential changes
+    management_action = deep_get(module.params, "secret_management.management_action", "NOT_FOUND", False)
+    cpm_new_secret = deep_get(module.params, "secret_management.new_secret", "NOT_FOUND", False)
+    logging.debug("management_action: %s  cpm_new_secret: %s" %(management_action, cpm_new_secret))
+
+    # Prepare result, end_point, and headers
+    result = {}
+    end_point = None
+    payload = {}
+    
+    if management_action == "change" and cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND":
+        logging.debug("CPM change secret for next CPM cycle")
+        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account["id"]
+        payload["ChangeImmediately"] = False
+        payload["NewCredentials"] = cpm_new_secret
+    elif management_action == "change_immediately" and (cpm_new_secret == "NOT_FOUND" or cpm_new_secret is None):
+        logging.debug("CPM change_immediately with random secret")
+        end_point = "/PasswordVault/API/Accounts/%s/Change" % existing_account["id"]
+        payload["ChangeEntireGroup"] = False
+    elif management_action == "change_immediately" and (cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND"):
+        logging.debug("CPM change immediately secret for next CPM cycle")
+        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account["id"]
+        payload["ChangeImmediately"] = True
+        payload["NewCredentials"] = cpm_new_secret
+    elif management_action == "reconcile":
+        logging.debug("CPM reconcile secret")
+        end_point = "/PasswordVault/API/Accounts/%s/Reconcile" % existing_account["id"]
+    elif "new_secret" in module.params.keys() and module.params["new_secret"] is not None:
+        logging.debug("Change Credential in Vault")
+        end_point = "/PasswordVault/API/Accounts/%s/Password/Update" % existing_account["id"]
+        payload["ChangeEntireGroup"] = True
+        payload["NewCredentials"] = module.params["new_secret"]
+    
+    
+    if end_point is not None:  
+        logging.debug("Proceeding with Credential Rotation")
+
+        headers = {'Content-Type': 'application/json',
+                   "Authorization": cyberark_session["token"]}
+        HTTPMethod = "POST"
+        try:
+    
+           response = open_url(
+               api_base_url + end_point,
+               method=HTTPMethod,
+               headers=headers,
+               data=json.dumps(payload),
+               validate_certs=validate_certs)
+    
+           result = {"result": None}
+    
+           return (True, result, response.getcode())
+    
+        except (HTTPError, httplib.HTTPException) as http_exception:
+
+            if isinstance(http_exception, HTTPError):
+                res = json.load(http_exception)
+            else:
+                res = to_text(http_exception)
+            
+            module.fail_json(
+                msg=("Error while performing reset_account."
+                     "Please validate parameters provided."
+                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
+                headers=headers,
+                payload=payload,
+                status_code=http_exception.code)
+    
+        except Exception as unknown_exception:
+    
+            module.fail_json(
+                msg=("Unknown error while performing delete_account."
+                     "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                headers=headers,
+                payload=payload,
+                status_code=-1)
+
+        
+    else:
+        return(False, result, -1)
+    
+
+
+def referenced_value(field, dct, keys=None, default=None):
+  return dct[field] if field in (keys if keys is not None else dct) else default
+  
 def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
   result_dct = {}
+  path = None
   for key in dotted_path.split('.'):
     try:
         key_field = key
         if use_reference_table:
-            key_field = cyberark_reference_fieldnames[key] if key in cyberark_reference_fieldnames else key
-        logging.debug("key_field => %s" % key_field)
-        
-        if isinstance(dct[key_field if key_field in dct.keys() else key], dict):
-            for dict_key in dct[key].keys():
-                internal_key_field = dict_key
-                if use_reference_table:
-                    logging.debug("Getting keyname from reference table")
-                    internal_key_field = cyberark_reference_fieldnames[dict_key] if dict_key in cyberark_reference_fieldnames else dict_key
-                logging.debug("Internal key_field => %s" % internal_key_field)
-                result_dct[internal_key_field] = deep_get(dct[key], dict_key, default, True)
-        else:
-            result_dct = dct[key_field if key_field in dct.keys() else key]
+            key_field = referenced_value(key, cyberark_reference_fieldnames, default=key)
 
-    except KeyError:
+        if len(result_dct.keys()) == 0: # No result_dct set yet
+            result_dct = dct
+
+        logging.debug("keys=%s key_field=>%s   key=>%s" % (",".join(result_dct.keys()), key_field, key))
+        result_dct = result_dct[key_field] if key_field in result_dct.keys() else result_dct[key]
+        
+    except KeyError as e:
+      logging.debug("KeyError " + to_text(e))
       if default is _empty:
         raise
       return default
@@ -463,8 +572,16 @@ def main():
                         "default": "password"
                        },
         "secret": {"required": False, "type": "str"},
+        "new_secret": {"required": False, "type": "str"},
         "username": {"required": False, "type": "str"},
-        "secret_management": {"required": False, "type": "dict", "options": {"automatic_management_enabled": {"type": "bool"}, "manual_management_reason": {"type": "str"}}},
+        "secret_management": {"required": False, "type": "dict", 
+                              "options": {
+                                            "automatic_management_enabled": {"type": "bool"}, 
+                                            "manual_management_reason": {"type": "str"},
+                                            "management_action": {"type": "str", "choices": ["change", "change_immediately", "reconcile"]},
+                                            "new_secret": {"type": "str"}
+                                         }
+                             },
         "remote_machines_access": {"required": False, "type": "dict", "options": {"remote_machines": {"type": "str"}, "access_restricted_to_remote_machines": {"type": "bool"}}},
         "platform_account_properties": {"required": False, "type": "dict"},
     }
@@ -492,6 +609,11 @@ def main():
             (changed, result, status_code) = update_account(module, account_record)
         else: # Account does not exist, and we need to create it
             (changed, result, status_code) = add_account(module)
+        
+        logging.debug("Result=>%s" % json.dumps(result))
+        (account_reset, reset_result, reset_status_code) = reset_account_if_needed(module, result["result"])
+        if account_reset:
+            changed = True
     
     elif (found and state == "absent"):
         (changed, result, status_code) = delete_account(module, account_record)
