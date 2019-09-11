@@ -11,61 +11,292 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = '''
 ---
-module: cyberark_add_account
-short_description: Module for CyberArk Account object modification using PAS Web Services SDK
-author: CyberArk BizDev Tech (@enunez-cyberark, @cyberark-bizdev, @erasmix @jimmyjamcabd)
+module: cyberark_account
+short_description: Module for CyberArk Account object creation, deletion, and modification using PAS Web Services SDK
+author: CyberArk BizDev Tech (@enunez-cyberark, @cyberark-bizdev, @jimmyjamcabd)
 version_added: 2.4
 description:
-    - Authenticates to CyberArk Vault using Privileged Account Security Web Services SDK and
-      creates a session fact that can be used by other modules. It returns an Ansible fact
-      called I(cyberark_session). Every module can use this fact as C(cyberark_session) parameter.
+    - Creates a URI for adding, deleting, modifying a privileged credential within the Cyberark Vault.  The request uses the Privileged 
+      Account Security Web Services SDK.
+
 
 options:
-  account:
+    state:
+	    description:
+		    - Assert the desired state of the account C(present) to creat or update and account object. Set to C(absent) for deletion of an account object
+        required: true
+        default: present
+        choices: [present, absent]
+		type: str
+    logging_level:
+	    description:
+            - Parameter used to define the level of troubleshooting output to the C(logging_file) value
+        required: true
+        choices: [NOTSET, DEBUG, INFO]
+		type: str
+    logging_file:
+	    description:
+            - Setting the log file name and location for troubleshooting logs
+        required: false
+		default: /tmp/ansible_cyberark.log
+	    type: str
+    api_base_url:
+	    description:
+            - A string containing the base URL of the server hosting CyberArk's Privileged Account Security Web Services SDK
+			- Example: U(https://<IIS_Server_Ip>/PasswordVault/api/)
+        required: true
+	    type: str
+    validate_certs:
+        description:
+            - If C(false), SSL certificate chain will not be validated.  This should only set to C(true) if you have a root CA certificate installed on each node.
+        required: false
+        default: true
+		type: bool
+    cyberark_session:
+	    description:
+            - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session, please see M(cyberark_authentication) module for an example of cyberark_session.
+	    required: true
+		type: dict
+    identified_by: 
+	    description:
+            - When an API call is made to Get Accounts, often times the default parameters passed will identify more than one account. This parameter is used to confidently identify a single account when the default query can return multiple results.
+	    required: false
+		default: username,address,platform_id
+		type: str		
     safe:
-    platformID:
+	    description:
+            - The safe in the Vault where the privileged account is to be located
+	    required: true
+	    type: str
+    platform_id:
+	    description:
+            - The PolicyID of the Platform that is to be managing the account
+		required: false
+		type: str
     address:
-    accountName:
-    password:
+	    description:
+            - The adress of the endpoint where the privileged account is located
+	    required: false
+		type: str
+    name:
+	    description:
+            - The ObjectID of the account
+	    required: false
+	    type: str
+    secret_type:
+	    description:
+            - The value that identifies what type of account it will be.
+        required: false
+        default: password
+        choices: [password, key]
+        type: str
+    secret:
+	    description:
+            - The initial password for the creation of the account
+	    required: false
+		type: str
     username:
-    disableAutoMgmt:
-    disableAutoMgmtReason:
-  groupName:
-  groupPlatformID:
-    properties:
-      Key:Port,Value:
-      Key:ExtraPass1Name,Value:
-      Key:ExtraPass1Folder,Value:
-      Key:ExtraPass1Safe,Value:
-      Key:Extrapass3Name,Value
-      Key:ExtraPass3Folder,Value:
-      Key:ExtraPass3Safe,Value:
+	    description:
+            - The username associated with the account
+	    required: false
+		type: str
+    secret_management
+        description:
+            - Set of parameters associated with the management of the credential
+        required: false
+	        suboptions:
+                automatic_management_enabled:
+                    description:
+                        - Parameter that indicates whether the CPM will manage the password or not
+                    default: True
+					type: bool
+				manual_management_reason:
+                    description:
+                        - String value indicating why the CPM will NOT manage the password
+				    type: str
+			    management_action:
+				    description:
+					    - CPM action flag to be placed on the account object for credential rotation
+					choices: [change, change_immediately, reconcile]
+					type: str
+                new_secret:
+                    description:
+                        - The actual password value that will be assigned for the CPM action to be taken
+                    type: str
+					
+    remote_machines_access:
+		description:
+            - Set of parameters for defining PSM endpoint access targets
+	        suboptions:
+			    remote_machines:
+					description:
+                        - List of targets allowed for this account 
+					type: str
+                access_restricted_to_remote_machines:
+	                description:
+                        - Whether or not to restrict access only to specified remote machines
+					type: bool
+    platform_account_properties:
+	    description:
+            - Object containing key-value pairs to associate with the account, as defined by the account platform. These properties are validated against the mandatory and optional properties of the specified platform's definition. Optional properties that do not exist on the account will not be returned here. Internal properties are not returned.
+	    required: False
+        type: dict
+		    suboptions:
+			    KEY:
+				    description:
+                        - Freeform key value associated to the mandatory or optional property assigned to the specified Platform's definition.
+					aliases: [Port, ExtrPass1Name, database]
+					type: str
 '''
 
 EXAMPLES = '''
-- name: Logon to CyberArk Vault using PAS Web Services SDK
-  cyberark_authentication:
-    api_base_url: "https://components.cyberark.local"
-    use_shared_logon_authentication: true
+  collections:
+    - cyberark.bizdev
 
-- name: Add account to CyberArk Vault
-  cyberark_add_account
-    account:
-      safe: "target safe name"
-      platformID: "existing platform ID"
-      address: "target address"
-      password: "account password"
-      username: "target account username"
+  tasks:
+
+    - name: Logon to CyberArk Vault using PAS Web Services SDK
+      cyberark_authentication:
+        api_base_url: "http://components.cyberark.local"
+        validate_certs: no
+        username: "bizdev"
+        password: "Cyberark1"
+
+    - name: Creating an Account using the PAS WebServices SDK
+      cyberark_account:
+        logging_level: DEBUG
+        identified_by: "address,username"
+        safe: "Test"
+        address: "cyberark.local"
+        username: "administrator-x"
+        platform_id: WinServerLocal
+        secret: "@N&Ibl3!"
+        platform_account_properties:
+            LogonDomain: "cyberark"
+            OwnerName: "ansible_user"
+        secret_management:
+            automatic_management_enabled: true
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: cyberarkaction
+	
+    - name: Rotate credential via reconcile and providing the password to be changed to
+      cyberark_account:
+        identified_by: "address,username"
+        safe: "Domain_Admins"
+        address: "prod.cyberark.local"
+        username: "admin"
+        platform_id: WinDomain
+        platform_account_properties:
+            LogonDomain: "PROD"
+        secret_management:
+             new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+            management_action: "reconcile"
+            automatic_management_enabled: true
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: reconcileaccount
+
+    - name: Logoff from CyberArk Vault
+      cyberark_authentication:
+        state: absent
+        cyberark_session: "{{ cyberark_session }}"
 
 '''
 RETURN = '''
-
-
+changed:
+    description: Identify if the playbook run resulted in a change to the account in any way
+	returned: always
+	type: bool
+failed:
+    description: Identify if the playbook run resulted in a failure of any kind
+	returned: always
+	type: bool
 status_code:
-    description: Account was added successfully
-    returned: success
-    type: int
-    sample: 201
+    description: Result HTTP Status code
+	returned: success
+	type: int
+	sample: "200, 201, -1, 204"
+result:
+    description: A json dump of the resulting action
+	returned: success
+	type: complex
+	sample:
+		address:
+			description: The adress of the endpoint where the privileged account is located
+			returned: successful addition and modification
+			type: str
+			sample: dev.local
+		createdTime: Timeframe calculation of the timestamp of account creation
+			description: 
+			returned: successful addition and modification
+			type: int
+			sample: "1567824520"
+		id:
+			description: Internal ObjectID for the account object identified
+			returned: successful addition and modification
+			type: int
+			sample: "25_21"
+		name:
+			description: The external ObjectID of the account
+			returned: successful addition and modification
+			type: str
+			sample: Operating System-WinServerLocal-cyberark.local-administrator
+		platformAccountProperties:
+			description: Object containing key-value pairs to associate with the account, as defined by the account platform.
+			returned: successful addition and modification
+			type: complex
+			sample:
+				"KEY": "VALUE"
+					description: 
+					returned: successful addition and modification
+					type: str
+					sample:
+						- "LogonDomain": "cyberark"
+						- "Port": "22"
+		platformId:
+			description: The PolicyID of the Platform that is to be managing the account
+			returned: successful addition and modification
+			type: str
+			sample: WinServerLocal
+		safeName:
+			description: The safe in the Vault where the privileged account is to be located
+			returned: successful addition and modification
+			type: str
+			sample: Domain_Admins
+		secretManagement
+			description: Set of parameters associated with the management of the credential
+			returned: successful addition and modification
+			type: complex
+			sample:
+				automaticManagementEnabled
+					description: Parameter that indicates whether the CPM will manage the password or not
+					returned: successful addition and modification
+					type: bool
+				lastModifiedTime:
+					description: Timeframe calculation of the timestamp of account modification
+					returned: successful addition and modification
+					type: int
+					sample: "1567824520"
+				manualManagementReason:
+					description: 
+					returned: if C(automaticManagementEnabled) is set to false
+					type: str
+					sample: This is a static account
+
+		secretType:
+			description: The value that identifies what type of account it will be
+			returned: successful addition and modification
+			type: list
+			sample:
+				- key
+				- password
+		userName:
+			description: The username associated with the account
+			returned: successful addition and modification
+			type: str
+			sample: administrator
+
 '''
 
 from ansible.module_utils._text import to_text
