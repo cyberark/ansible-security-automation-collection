@@ -96,12 +96,14 @@ ansible_specific_parameters = ["state", "api_base_url",
                                "secret_management.new_secret",
                                "management_action"]
                                
-cyberark_nonremovable_properties = ["createdTime",
-                                    "id",
-                                    "name",
-                                    "lastModifiedTime",
-                                    "safeName",
-                                    "secretType"]
+cyberark_fixed_properties = ["createdTime",
+                             "id",
+                             "name",
+                             "lastModifiedTime",
+                             "safeName",
+                             "secretType",
+                             "secret"]
+
 removal_value = "NO_VALUE"
 
 cyberark_reference_fieldnames = {
@@ -151,38 +153,39 @@ def update_account(module, existing_account):
         if parameter_name not in ansible_specific_parameters and module.params[parameter_name] is not None:
             module_parm_value = module.params[parameter_name]
             cyberark_property_name = referenced_value(parameter_name, cyberark_reference_fieldnames, default=parameter_name)
-            existing_account_value = referenced_value(cyberark_property_name, existing_account, keys=existing_account.keys())            
-            if isinstance(module_parm_value, dict):
-                # Internal child values
-                for child_parm_name in module_parm_value.keys():
-                    nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
-                    if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
-                        child_module_parm_value = module_parm_value[child_parm_name]
-                        child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames,default=child_parm_name)
-                        child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys())
-                        path_value = "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)
-                        if child_existing_account_value is not None:
-                            logging.debug("child_module_parm_value: %s  child_existing_account_value=%s  path=%s" %(child_module_parm_value, child_existing_account_value, path_value))
-                            if child_module_parm_value == removal_value:
-                                payload["Operations"].append({"op": "remove", "path": path_value})
-                            elif child_existing_account_value != child_module_parm_value:
-                                # Updating a property
-                                payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
-                        elif child_module_parm_value is not None and child_module_parm_value != removal_value:
-                            # Adding a property value
-                            payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
-                        logging.debug("parameter_name=%s  value=%s existing=%s" % (path_value, child_module_parm_value, child_existing_account_value))
-            else:
-                if existing_account_value is not None:
-                    if module_parm_value == removal_value:
-                        payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name})
-                    elif existing_account_value != module_parm_value:
-                        # Updating a property
-                        payload["Operations"].append({"op": "replace", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
-                elif module_parm_value != removal_value:
-                    # Adding a property value
-                    payload["Operations"].append({"op": "add", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
-                logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
+            existing_account_value = referenced_value(cyberark_property_name, existing_account, keys=existing_account.keys())
+            if cyberark_property_name not in cyberark_fixed_properties:
+                if isinstance(module_parm_value, dict):
+                    # Internal child values
+                    for child_parm_name in module_parm_value.keys():
+                        nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
+                        if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
+                            child_module_parm_value = module_parm_value[child_parm_name]
+                            child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames,default=child_parm_name)
+                            child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys())
+                            path_value = "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)
+                            if child_existing_account_value is not None:
+                                logging.debug("child_module_parm_value: %s  child_existing_account_value=%s  path=%s" %(child_module_parm_value, child_existing_account_value, path_value))
+                                if child_module_parm_value == removal_value:
+                                    payload["Operations"].append({"op": "remove", "path": path_value})
+                                elif child_module_parm_value is not None and child_existing_account_value != child_module_parm_value:
+                                    # Updating a property
+                                    payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
+                            elif child_module_parm_value is not None and child_module_parm_value != removal_value:
+                                # Adding a property value
+                                payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
+                            logging.debug("parameter_name=%s  value=%s existing=%s" % (path_value, child_module_parm_value, child_existing_account_value))
+                else:
+                    if existing_account_value is not None:
+                        if module_parm_value == removal_value:
+                            payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name})
+                        elif existing_account_value != module_parm_value:
+                            # Updating a property
+                            payload["Operations"].append({"op": "replace", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
+                    elif module_parm_value != removal_value:
+                        # Adding a property value
+                        payload["Operations"].append({"op": "add", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
+                    logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
                             
     if (len(payload["Operations"]) == 0):
         return(False, result, -1)
@@ -242,19 +245,26 @@ def add_account(module):
 
     for parameter_name in module.params.keys():
         if parameter_name not in ansible_specific_parameters and module.params[parameter_name] is not None:
-
-            if parameter_name not in cyberark_reference_fieldnames:
-                module_parm_value = deep_get(module.params, parameter_name, _empty, False)
-                if module_parm_value != removal_value:
-                    payload[parameter_name] = module_parm_value # module.params[parameter_name]
+            cyberark_property_name = referenced_value(parameter_name, cyberark_reference_fieldnames, default=parameter_name)
+            if isinstance(module.params[parameter_name], dict):
+                payload[cyberark_property_name] = {}
+                for dict_key in module.params[parameter_name].keys():
+                    cyberark_child_property_name = referenced_value(dict_key, cyberark_reference_fieldnames, default=dict_key)
+                    logging.debug("parameter_name =%s.%s cyberark_property_name=%s cyberark_child_property_name=%s" % (parameter_name, dict_key, cyberark_property_name, cyberark_child_property_name))
+                    if parameter_name + "." + dict_key not in ansible_specific_parameters and module.params[parameter_name][dict_key] is not None:
+                        payload[cyberark_property_name][cyberark_child_property_name] = deep_get(module.params[parameter_name], dict_key, _empty, False)
             else:
-                module_parm_value = deep_get(module.params, parameter_name, _empty, True)
-                if module_parm_value != removal_value:
-                    payload[cyberark_reference_fieldnames[parameter_name]] = module_parm_value # module.params[parameter_name]        
-
+                if parameter_name not in cyberark_reference_fieldnames:
+                    module_parm_value = deep_get(module.params, parameter_name, _empty, False)
+                    if module_parm_value is not None and module_parm_value != removal_value:
+                        payload[parameter_name] = module_parm_value # module.params[parameter_name]
+                else:
+                    module_parm_value = deep_get(module.params, parameter_name, _empty, True)
+                    if module_parm_value is not None and module_parm_value != removal_value:
+                        payload[cyberark_reference_fieldnames[parameter_name]] = module_parm_value # module.params[parameter_name]
             logging.debug("parameter_name =%s" % (parameter_name))
 
-    logging.debug("Payload => %s" % json.dumps(payload))
+    logging.debug("Add Account Payload => %s" % json.dumps(payload))
 
     try:
 
@@ -358,7 +368,7 @@ def reset_account_if_needed(module, existing_account):
     elif management_action == "change_immediately" and (cpm_new_secret == "NOT_FOUND" or cpm_new_secret is None):
         logging.debug("CPM change_immediately with random secret")
         end_point = "/PasswordVault/API/Accounts/%s/Change" % existing_account["id"]
-        payload["ChangeEntireGroup"] = False
+        payload["ChangeEntireGroup"] = True
     elif management_action == "change_immediately" and (cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND"):
         logging.debug("CPM change immediately secret for next CPM cycle")
         end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account["id"]
@@ -621,7 +631,7 @@ def main():
 
     module.exit_json(
         changed=changed,
-        cyberark_account=result,
+        result=result,
         status_code=status_code)
 
 
