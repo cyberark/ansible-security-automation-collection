@@ -344,7 +344,10 @@ cyberark_reference_fieldnames = {
     "platform_account_properties": "platformAccountProperties",
     "secret_management": "secretManagement",
     "manual_management_reason": "manualManagementReason",
-    "automatic_management_enabled": "automaticManagementEnabled"
+    "automatic_management_enabled": "automaticManagementEnabled",
+    "remote_machines_access": "remoteMachinesAccess",
+    "access_restricted_to_remote_machines": "accessRestrictedToRemoteMachines",
+    "remote_machines": "remoteMachines"
 }
 
 ansible_reference_fieldnames = {
@@ -355,7 +358,10 @@ ansible_reference_fieldnames = {
     "platformAccountProperties": "platform_account_properties",
     "secretManagement": "secret_management",
     "manualManagementReason": "manual_management_reason",
-    "automaticManagementEnabled": "automatic_management_enabled"
+    "automaticManagementEnabled": "automatic_management_enabled",
+    "remoteMachinesAccess": "remote_machines_access",
+    "accessRestrictedToRemoteMachines": "access_testricted_to_remoteMachines",
+    "remoteMachines": "remote_machines"
 }
 
 
@@ -370,6 +376,9 @@ def update_account(module, existing_account):
 
     # Prepare result, end_point, and headers
     result = {"result": existing_account}
+    changed = False
+    last_status_code = -1
+
     HTTPMethod = "PATCH"
     end_point = "/PasswordVault/api/Accounts/%s" % existing_account["id"]
 
@@ -390,9 +399,10 @@ def update_account(module, existing_account):
                     for child_parm_name in module_parm_value.keys():
                         nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
                         if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
+#                             logging.debug("Existing Account Value: %s  cyberark_property_name=%s existing_account:%s" % (existing_account_value, cyberark_property_name, existing_account))
                             child_module_parm_value = module_parm_value[child_parm_name]
                             child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames,default=child_parm_name)
-                            child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys())
+                            child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys() if existing_account_value is not None else {})
                             path_value = "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)
                             if child_existing_account_value is not None:
                                 logging.debug("child_module_parm_value: %s  child_existing_account_value=%s  path=%s" %(child_module_parm_value, child_existing_account_value, path_value))
@@ -417,42 +427,50 @@ def update_account(module, existing_account):
                         payload["Operations"].append({"op": "add", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
                     logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
                             
-    if (len(payload["Operations"]) == 0):
-        return(False, result, -1)
-    else:
-        logging.debug("Operations => %s" % json.dumps(payload))
-        try:
-    
-           response = open_url(
-               api_base_url + end_point,
-               method=HTTPMethod,
-               headers=headers,
-               data=json.dumps(payload["Operations"]),
-               validate_certs=validate_certs)
-    
-           result = {"result": json.loads(response.read())}
-    
-           return (True, result, response.getcode())
-    
-        except (HTTPError, httplib.HTTPException) as http_exception:
-    
-            module.fail_json(
-                msg=("Error while performing update_account."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
-                payload=payload,
-                headers=headers,
-                status_code=http_exception.code)
-    
-        except Exception as unknown_exception:
-    
-            module.fail_json(
-                msg=("Unknown error while performing update_account."
-                     "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
-                payload=payload,
-                headers=headers,
-                status_code=-1)
+    if (len(payload["Operations"]) != 0):
+        logging.debug("Processing invidual operations (%d) => %s" % (len(payload["Operations"]), json.dumps(payload)))
+        for operation in payload["Operations"]:
+            individual_payload = [operation]
+            try:
+               logging.debug(" ==> %s" % json.dumps([operation]))
+               response = open_url(
+                   api_base_url + end_point,
+                   method=HTTPMethod,
+                   headers=headers,
+                   data=json.dumps(individual_payload),
+                   validate_certs=validate_certs)
+        
+               result = {"result": json.loads(response.read())}
+               changed = True
+               last_status_code = response.getcode()
+        
+#                return (True, result, response.getcode())
+        
+            except (HTTPError, httplib.HTTPException) as http_exception:
+        
+                if isinstance(http_exception, HTTPError):
+                    res = json.load(http_exception)
+                else:
+                    res = to_text(http_exception)
 
+                module.fail_json(
+                    msg=("Error while performing update_account."
+                         "Please validate parameters provided."
+                         "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
+                    payload=individual_payload,
+                    headers=headers,
+                    status_code=http_exception.code)
+        
+            except Exception as unknown_exception:
+        
+                module.fail_json(
+                    msg=("Unknown error while performing update_account."
+                         "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                    payload=individual_payload,
+                    headers=headers,
+                    status_code=-1)
+    
+    return(changed, result, last_status_code)
 
 
 def add_account(module):
@@ -511,10 +529,15 @@ def add_account(module):
 
     except (HTTPError, httplib.HTTPException) as http_exception:
 
+        if isinstance(http_exception, HTTPError):
+            res = json.load(http_exception)
+        else:
+            res = to_text(http_exception)
+
         module.fail_json(
             msg=("Error while performing add_account."
                  "Please validate parameters provided."
-                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
+                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
             payload=payload,
             headers=headers,
             status_code=http_exception.code)
@@ -559,10 +582,15 @@ def delete_account(module, existing_account):
 
     except (HTTPError, httplib.HTTPException) as http_exception:
 
+        if isinstance(http_exception, HTTPError):
+            res = json.load(http_exception)
+        else:
+            res = to_text(http_exception)
+
         module.fail_json(
             msg=("Error while performing delete_account."
                  "Please validate parameters provided."
-                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
+                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
             headers=headers,
             status_code=http_exception.code)
 
@@ -661,7 +689,6 @@ def reset_account_if_needed(module, existing_account):
     else:
         return(False, result, -1)
     
-
 
 def referenced_value(field, dct, keys=None, default=None):
   return dct[field] if field in (keys if keys is not None else dct) else default
