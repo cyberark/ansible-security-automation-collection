@@ -22,131 +22,132 @@ description:
 
 options:
     state:
-	    description:
-		    - Assert the desired state of the account C(present) to creat or update and account object. Set to C(absent) for deletion of an account object
+        description:
+            - Assert the desired state of the account C(present) to creat or update and account object. Set to C(absent) for deletion of an account object
         required: true
         default: present
         choices: [present, absent]
-		type: str
+        type: str
     logging_level:
-	    description:
+        description:
             - Parameter used to define the level of troubleshooting output to the C(logging_file) value
         required: true
         choices: [NOTSET, DEBUG, INFO]
-		type: str
+        type: str
     logging_file:
-	    description:
+        description:
             - Setting the log file name and location for troubleshooting logs
         required: false
-		default: /tmp/ansible_cyberark.log
-	    type: str
+        default: /tmp/ansible_cyberark.log
+        type: str
     api_base_url:
-	    description:
+        description:
             - A string containing the base URL of the server hosting CyberArk's Privileged Account Security Web Services SDK
-			- Example: U(https://<IIS_Server_Ip>/PasswordVault/api/)
+            - Example: U(https://<IIS_Server_Ip>/PasswordVault/api/)
         required: true
-	    type: str
+        type: str
     validate_certs:
         description:
             - If C(false), SSL certificate chain will not be validated.  This should only set to C(true) if you have a root CA certificate installed on each node.
         required: false
         default: true
-		type: bool
+        type: bool
     cyberark_session:
-	    description:
+        description:
             - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session, please see M(cyberark_authentication) module for an example of cyberark_session.
-	    required: true
-		type: dict
+        required: true
+        type: dict
     identified_by: 
-	    description:
+        description:
             - When an API call is made to Get Accounts, often times the default parameters passed will identify more than one account. This parameter is used to confidently identify a single account when the default query can return multiple results.
-	    required: false
-		default: username,address,platform_id
-		type: str		
+        required: false
+        default: username,address,platform_id
+        type: str        
     safe:
-	    description:
+        description:
             - The safe in the Vault where the privileged account is to be located
-	    required: true
-	    type: str
+        required: true
+        type: str
     platform_id:
-	    description:
+        description:
             - The PolicyID of the Platform that is to be managing the account
-		required: false
-		type: str
+        required: false
+        type: str
     address:
-	    description:
+        description:
             - The adress of the endpoint where the privileged account is located
-	    required: false
-		type: str
+        required: false
+        type: str
     name:
-	    description:
+        description:
             - The ObjectID of the account
-	    required: false
-	    type: str
+        required: false
+        type: str
     secret_type:
-	    description:
+        description:
             - The value that identifies what type of account it will be.
         required: false
         default: password
         choices: [password, key]
         type: str
     secret:
-	    description:
+        description:
             - The initial password for the creation of the account
-	    required: false
-		type: str
+        required: false
+        type: str
     username:
-	    description:
+        description:
             - The username associated with the account
-	    required: false
-		type: str
+        required: false
+        type: str
     secret_management
         description:
             - Set of parameters associated with the management of the credential
         required: false
-	        suboptions:
+            suboptions:
                 automatic_management_enabled:
                     description:
                         - Parameter that indicates whether the CPM will manage the password or not
                     default: True
-					type: bool
-				manual_management_reason:
+                    type: bool
+                manual_management_reason:
                     description:
                         - String value indicating why the CPM will NOT manage the password
-				    type: str
-			    management_action:
-				    description:
-					    - CPM action flag to be placed on the account object for credential rotation
-					choices: [change, change_immediately, reconcile]
-					type: str
+                    type: str
+                management_action:
+                    description:
+                        - CPM action flag to be placed on the account object for credential rotation
+                    choices: [change, change_immediately, reconcile]
+                    type: str
                 new_secret:
                     description:
                         - The actual password value that will be assigned for the CPM action to be taken
                     type: str
-					
     remote_machines_access:
-		description:
+        description:
             - Set of parameters for defining PSM endpoint access targets
-	        suboptions:
-			    remote_machines:
-					description:
-                        - List of targets allowed for this account 
-					type: str
-                access_restricted_to_remote_machines:
-	                description:
-                        - Whether or not to restrict access only to specified remote machines
-					type: bool
-    platform_account_properties:
-	    description:
-            - Object containing key-value pairs to associate with the account, as defined by the account platform. These properties are validated against the mandatory and optional properties of the specified platform's definition. Optional properties that do not exist on the account will not be returned here. Internal properties are not returned.
-	    required: False
+        required: false
         type: dict
-		    suboptions:
-			    KEY:
-				    description:
+            suboptions:
+                remote_machines:
+                    description:
+                        - List of targets allowed for this account 
+                    type: str
+                access_restricted_to_remote_machines:
+                    description:
+                        - Whether or not to restrict access only to specified remote machines
+                    type: bool
+    platform_account_properties:
+        description:
+            - Object containing key-value pairs to associate with the account, as defined by the account platform. These properties are validated against the mandatory and optional properties of the specified platform's definition. Optional properties that do not exist on the account will not be returned here. Internal properties are not returned.
+        required: false
+        type: dict
+            suboptions:
+                KEY:
+                    description:
                         - Freeform key value associated to the mandatory or optional property assigned to the specified Platform's definition.
-					aliases: [Port, ExtrPass1Name, database]
-					type: str
+                    aliases: [Port, ExtrPass1Name, database]
+                    type: str
 '''
 
 EXAMPLES = '''
@@ -179,7 +180,7 @@ EXAMPLES = '''
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-	
+    
     - name: Rotate credential via reconcile and providing the password to be changed to
       cyberark_account:
         identified_by: "address,username"
@@ -190,7 +191,7 @@ EXAMPLES = '''
         platform_account_properties:
             LogonDomain: "PROD"
         secret_management:
-             new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+            new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
             management_action: "reconcile"
             automatic_management_enabled: true
         state: present
@@ -206,97 +207,95 @@ EXAMPLES = '''
 RETURN = '''
 changed:
     description: Identify if the playbook run resulted in a change to the account in any way
-	returned: always
-	type: bool
+    returned: always
+    type: bool
 failed:
     description: Identify if the playbook run resulted in a failure of any kind
-	returned: always
-	type: bool
+    returned: always
+    type: bool
 status_code:
     description: Result HTTP Status code
-	returned: success
-	type: int
-	sample: "200, 201, -1, 204"
+    returned: success
+    type: int
+    sample: "200, 201, -1, 204"
 result:
     description: A json dump of the resulting action
-	returned: success
-	type: complex
-	sample:
-		address:
-			description: The adress of the endpoint where the privileged account is located
-			returned: successful addition and modification
-			type: str
-			sample: dev.local
-		createdTime: Timeframe calculation of the timestamp of account creation
-			description: 
-			returned: successful addition and modification
-			type: int
-			sample: "1567824520"
-		id:
-			description: Internal ObjectID for the account object identified
-			returned: successful addition and modification
-			type: int
-			sample: "25_21"
-		name:
-			description: The external ObjectID of the account
-			returned: successful addition and modification
-			type: str
-			sample: Operating System-WinServerLocal-cyberark.local-administrator
-		platformAccountProperties:
-			description: Object containing key-value pairs to associate with the account, as defined by the account platform.
-			returned: successful addition and modification
-			type: complex
-			sample:
-				"KEY": "VALUE"
-					description: 
-					returned: successful addition and modification
-					type: str
-					sample:
-						- "LogonDomain": "cyberark"
-						- "Port": "22"
-		platformId:
-			description: The PolicyID of the Platform that is to be managing the account
-			returned: successful addition and modification
-			type: str
-			sample: WinServerLocal
-		safeName:
-			description: The safe in the Vault where the privileged account is to be located
-			returned: successful addition and modification
-			type: str
-			sample: Domain_Admins
-		secretManagement
-			description: Set of parameters associated with the management of the credential
-			returned: successful addition and modification
-			type: complex
-			sample:
-				automaticManagementEnabled
-					description: Parameter that indicates whether the CPM will manage the password or not
-					returned: successful addition and modification
-					type: bool
-				lastModifiedTime:
-					description: Timeframe calculation of the timestamp of account modification
-					returned: successful addition and modification
-					type: int
-					sample: "1567824520"
-				manualManagementReason:
-					description: 
-					returned: if C(automaticManagementEnabled) is set to false
-					type: str
-					sample: This is a static account
-
-		secretType:
-			description: The value that identifies what type of account it will be
-			returned: successful addition and modification
-			type: list
-			sample:
-				- key
-				- password
-		userName:
-			description: The username associated with the account
-			returned: successful addition and modification
-			type: str
-			sample: administrator
-
+    returned: success
+    type: complex
+    sample:
+        address:
+            description: The adress of the endpoint where the privileged account is located
+            returned: successful addition and modification
+            type: str
+            sample: dev.local
+        createdTime: Timeframe calculation of the timestamp of account creation
+            description: 
+            returned: successful addition and modification
+            type: int
+            sample: "1567824520"
+        id:
+            description: Internal ObjectID for the account object identified
+            returned: successful addition and modification
+            type: int
+            sample: "25_21"
+        name:
+            description: The external ObjectID of the account
+            returned: successful addition and modification
+            type: str
+            sample: Operating System-WinServerLocal-cyberark.local-administrator
+        platformAccountProperties:
+            description: Object containing key-value pairs to associate with the account, as defined by the account platform.
+            returned: successful addition and modification
+            type: complex
+            sample:
+                "KEY": "VALUE"
+                    description: 
+                    returned: successful addition and modification
+                    type: str
+                    sample:
+                        - "LogonDomain": "cyberark"
+                        - "Port": "22"
+        platformId:
+            description: The PolicyID of the Platform that is to be managing the account
+            returned: successful addition and modification
+            type: str
+            sample: WinServerLocal
+        safeName:
+            description: The safe in the Vault where the privileged account is to be located
+            returned: successful addition and modification
+            type: str
+            sample: Domain_Admins
+        secretManagement
+            description: Set of parameters associated with the management of the credential
+            returned: successful addition and modification
+            type: complex
+            sample:
+                automaticManagementEnabled
+                    description: Parameter that indicates whether the CPM will manage the password or not
+                    returned: successful addition and modification
+                    type: bool
+                lastModifiedTime:
+                    description: Timeframe calculation of the timestamp of account modification
+                    returned: successful addition and modification
+                    type: int
+                    sample: "1567824520"
+                manualManagementReason:
+                    description: 
+                    returned: if C(automaticManagementEnabled) is set to false
+                    type: str
+                    sample: This is a static account
+        secretType:
+            description: The value that identifies what type of account it will be
+            returned: successful addition and modification
+            type: list
+            sample:
+                - key
+                - password
+        userName:
+            description: The username associated with the account
+            returned: successful addition and modification
+            type: str
+            sample: administrator
 '''
 
 from ansible.module_utils._text import to_text
