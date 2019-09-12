@@ -865,7 +865,7 @@ def main():
                         "default": "password"
                        },
         "secret": {"required": False, "type": "str", "no_log": True},
-        "new_secret": {"required": False, "type": "str", , "no_log": True},
+        "new_secret": {"required": False, "type": "str", "no_log": True},
         "username": {"required": False, "type": "str"},
         "secret_management": {"required": False, "type": "dict", 
                               "options": {
