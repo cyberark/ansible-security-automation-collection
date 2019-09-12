@@ -852,7 +852,7 @@ def main():
         "api_base_url": {"type": "str"},
         "validate_certs": {"type": "bool",
                            "default": "true"},
-        "cyberark_session": {"required": True, "type": "dict"},
+        "cyberark_session": {"required": True, "type": "dict", "no_log": True},
         "identified_by": {"required": False, "type": "str", "default": "username,address,platform_id"},
         "safe": {"required": True, "type": "str"},
         "platform_id": {"required": False, "type": "str"},
@@ -864,15 +864,15 @@ def main():
                         "choices": ["password", "key"],
                         "default": "password"
                        },
-        "secret": {"required": False, "type": "str"},
-        "new_secret": {"required": False, "type": "str"},
+        "secret": {"required": False, "type": "str", "no_log": True},
+        "new_secret": {"required": False, "type": "str", "no_log": True},
         "username": {"required": False, "type": "str"},
         "secret_management": {"required": False, "type": "dict", 
                               "options": {
                                             "automatic_management_enabled": {"type": "bool"}, 
                                             "manual_management_reason": {"type": "str"},
                                             "management_action": {"type": "str", "choices": ["change", "change_immediately", "reconcile"]},
-                                            "new_secret": {"type": "str"}
+                                            "new_secret": {"type": "str", "no_log": True}
                                          }
                              },
         "remote_machines_access": {"required": False, "type": "dict", "options": {"remote_machines": {"type": "str"}, "access_restricted_to_remote_machines": {"type": "bool"}}},
