@@ -20,16 +20,12 @@
 
     - name: Account
       cyberark_account:
-        logging_level: DEBUG
         identified_by: "address,username"
         safe: "Test"
         address: "cyberark.local"
-        username: "administrator"
-        platform_id: WinDomain
-        state: present
+        username: "cyberark-administrator"
+        platform_id: WinDomain-Level2
         cyberark_session: "{{ cyberark_session }}"
-        secret_management:
-            automatic_management_enabled: true
       register: cyberarkaction
       
     - name: Debug message

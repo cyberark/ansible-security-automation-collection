@@ -20,10 +20,11 @@
 
     - name: Account
       cyberark_account:
+        logging_level: DEBUG
         identified_by: "address,username"
         safe: "Test"
         address: "cyberark.local"
-        username: "administrator"
+        username: "cyberark-administrator"
         state: absent
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction

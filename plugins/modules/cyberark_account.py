@@ -364,6 +364,15 @@ ansible_reference_fieldnames = {
     "remoteMachines": "remote_machines"
 }
 
+def equal_value(existing, parameter):
+    if type(existing) == type(parameter):
+        return existing == parameter
+    elif type(existing) == str:
+        return existing == str(parameter)
+    else:
+        return str(existing) == str(parameter)
+        
+
 
 def update_account(module, existing_account):
     
@@ -394,8 +403,11 @@ def update_account(module, existing_account):
             cyberark_property_name = referenced_value(parameter_name, cyberark_reference_fieldnames, default=parameter_name)
             existing_account_value = referenced_value(cyberark_property_name, existing_account, keys=existing_account.keys())
             if cyberark_property_name not in cyberark_fixed_properties:
-                if isinstance(module_parm_value, dict):
+                if module_parm_value is not None and isinstance(module_parm_value, dict):
                     # Internal child values
+                    replacing = {}
+                    adding = {}
+                    removing = {}
                     for child_parm_name in module_parm_value.keys():
                         nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
                         if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
@@ -407,19 +419,31 @@ def update_account(module, existing_account):
                             if child_existing_account_value is not None:
                                 logging.debug("child_module_parm_value: %s  child_existing_account_value=%s  path=%s" %(child_module_parm_value, child_existing_account_value, path_value))
                                 if child_module_parm_value == removal_value:
-                                    payload["Operations"].append({"op": "remove", "path": path_value})
-                                elif child_module_parm_value is not None and child_existing_account_value != child_module_parm_value:
+#                                     payload["Operations"].append({"op": "remove", "path": path_value})
+                                    removing.update({child_cyberark_property_name: child_existing_account_value})
+                                elif child_module_parm_value is not None and not equal_value(child_existing_account_value, child_module_parm_value):
                                     # Updating a property
-                                    payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
+                                    replacing.update({child_cyberark_property_name: child_module_parm_value})
+#                                     payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
                             elif child_module_parm_value is not None and child_module_parm_value != removal_value:
                                 # Adding a property value
-                                payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
+                                adding.update({child_cyberark_property_name: child_module_parm_value})
+#                                 payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
                             logging.debug("parameter_name=%s  value=%s existing=%s" % (path_value, child_module_parm_value, child_existing_account_value))
+                    # Processing child operations
+                    if len(adding.keys()) > 0 :
+                        payload["Operations"].append({"op": "add", "path": "/%s" % cyberark_property_name, "value": adding})
+                    if len(replacing.keys()) > 0:
+                        payload["Operations"].append({"op": "replace", "path": "/%s" % cyberark_property_name, "value": replacing})
+                    if len(removing) > 0:
+                        payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name, "value": removing})
+#                         for property_to_remove in removing:
+#                             payload["Operations"].append({"op": "remove", "path": property_to_remove})
                 else:
                     if existing_account_value is not None:
                         if module_parm_value == removal_value:
                             payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name})
-                        elif existing_account_value != module_parm_value:
+                        elif not equal_value(existing_account_value, module_parm_value):
                             # Updating a property
                             payload["Operations"].append({"op": "replace", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
                     elif module_parm_value != removal_value:
@@ -707,6 +731,8 @@ def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
 
         logging.debug("keys=%s key_field=>%s   key=>%s" % (",".join(result_dct.keys()), key_field, key))
         result_dct = result_dct[key_field] if key_field in result_dct.keys() else result_dct[key]
+        if result_dct is None:
+            return default
         
     except KeyError as e:
       logging.debug("KeyError " + to_text(e))

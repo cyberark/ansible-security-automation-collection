@@ -13,36 +13,25 @@
         username: "bizdev"
         password: "Cyberark1"
 
-
-    - name: Debug message
-      debug:
-        var: cyberark_session
-
-
-    - name: Account
-      cyberark_account_modding:
-        logging_level: "NOTSET"
-        logging_file: "/tmp/james_test.log"
+    - name: Rotate credential via reconcile and providing the password to be changed to
+      cyberark_account:
         identified_by: "address,username"
         safe: "Test"
-        address: "10.0.1.20"
-        username: "testestest"
-        platform_id: WinServerLocal
-        reset_credential: true
-#        secret_management:
-#            automatic_management_enabled: true
+        address: "prod.cyberark.local"
+        username: "admin"
+        platform_id: WinDomain
+        platform_account_properties:
+            ReconcileAccount: "Operating System-WinServerLocal-cyberark.local-administrator-x"
+            LogonDomain: "PROD"
+        secret_management:
+#            new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+#            management_action: "reconcile"
+            automatic_management_enabled: true
         state: present
         cyberark_session: "{{ cyberark_session }}"
-      register: cyberarkaction
-      
-    - name: Debug message
-      debug:
-        var: cyberarkaction
+      register: reconcileaccount
 
     - name: Logoff from CyberArk Vault
       cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
-
-    - name: Debug message
-      debug: var=cyberark_session

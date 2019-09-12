@@ -13,16 +13,12 @@
         username: "bizdev"
         password: "Cyberark1"
 
-
-    - name: Debug message
-      debug:
-        var: cyberark_session
-
     - name: Enabling a CyberArk User and forcing a password change at next logon
       cyberark_user:
         username: "ansibleuser"
         disabled: false
         state: present
+        change_password_on_the_next_logon: true
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
         
@@ -34,6 +30,3 @@
       cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
-
-    - name: Debug message
-      debug: var=cyberark_session

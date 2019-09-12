@@ -13,11 +13,6 @@
         username: "bizdev"
         password: "Cyberark1"
 
-
-    - name: Debug message
-      debug:
-        var: cyberark_session
-
     - name: Disabling a CyberArk User
       cyberark_user:
         username: "ansibleuser"
@@ -34,6 +29,3 @@
       cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
-
-    - name: Debug message
-      debug: var=cyberark_session
