@@ -3,6 +3,8 @@
 
 Authenticates to CyberArk Vault using Privileged Account Security Web Services SDK and creates a session fact that can be used by other modules. It returns an Ansible fact called `cyberark_session`. Every module can use this fact as `cyberark_session` parameter.
 
+
+#### Available Fields
 ```
 options:
     state:
