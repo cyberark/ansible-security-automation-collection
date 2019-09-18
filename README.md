@@ -1,5 +1,5 @@
 <!-- please note this has to be a absolute URL since otherwise it will not show up on galaxy.ansible.com -->
-![cyberark logo|](./docs/images/cyberark_logo.jpg)
+![cyberark logo|](./docs/images/full-cyberark_logo.jpg)
 
 
 ## CyberArk Ansible Security Automation Collection
