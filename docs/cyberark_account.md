@@ -42,7 +42,7 @@ The available options are as follows:<br>
 
 
 ## identified_by
-This property allows for the module to confidently identify the account object needing to be identified.  If multiple accounts are returned from the modules initial `Get Accounts` it will use the value(s) set in the `identified_by` parameter to direct which account is selected from the list.
+This property allows for the module to confidently identify the account object needing to be selected.  If multiple accounts are returned from the modules initial `Get Accounts` it will use the value(s) set in the `identified_by` parameter to direct which account is selected from the list.
 
 **EXAMPLE:**
 ```
