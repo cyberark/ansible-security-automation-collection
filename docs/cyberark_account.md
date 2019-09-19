@@ -14,7 +14,7 @@ The ability to modify consists of the following:
   * These are the parameters listed in the Platform under `UI & Workflows -> Properties` and are unique to each Platform (see image below)
 * Remote Machines Access
 
-![Platform Account Properties](docs/images/platform_account_properties.JPG)
+![Platform Account Properties](images/platform_account_properties.JPG)
 
 ### secret_management
 The `secret_management` dictionary provides the capability to set a CPM password rotation flag on an existing account.
