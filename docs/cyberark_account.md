@@ -16,7 +16,7 @@ The ability to modify consists of the following:
 
 ![Platform Account Properties](images/platform_account_properties.JPG)
 
-## secret_management
+### secret_management
 The `secret_management` dictionary provides the capability to set a CPM password rotation flag on an existing account.
 
 The available options are as follows:<br>
@@ -24,12 +24,16 @@ The available options are as follows:<br>
 `automatic_management_enabled`: bool<br>
 `manual_management_reason`: This is a string value that populates the Reason field is you have set an account to not be managed by the CPM.  This value is only necessary if `automatic_management_enabled` is set to false.<br>
 `management_action`: This value indicates what type CPM management flag will be placed on the account
-* change <br>
-* change_immediately <br>
-* reconcile <br>
+* change - <br>
+* change_immediately - <br>
+* reconcile - <br>
 
-`new_secret`: This parameter is available to set the value of the new password
+`new_secret`: This parameter is available to set the value of the new password<br>
+`perform_secret_management`: This parameter was allows the option to place a CPM management flag on an account upon creation of an account object.
+* always - All `secret_management` actions will follow the table below at all times.
+* on_create - Will place a CPM management flag according to the table below ONLY on creation of an account object.
 
+#### Secret Management Action Table
 | management_action   | new_secret  | Action  |
 | :---------: | :----: | :----- |
 | change | populated | change password to set value at next scheduled rotation |
@@ -41,8 +45,8 @@ The available options are as follows:<br>
 | NULL | populated | set value in Vault ONLY |
 
 
-## identified_by
-This property allows for the module to confidently identify the account object needing to be selected.  If multiple accounts are returned from the modules initial `Get Accounts` it will use the value(s) set in the `identified_by` parameter to direct which account is selected from the list.
+### identified_by
+This property allows for the module to confidently identify the account object needing to be identified.  If multiple accounts are returned from the modules initial `Get Accounts` it will use the value(s) set in the `identified_by` parameter to direct which account is selected from the list.
 
 **EXAMPLE:**
 ```
@@ -184,6 +188,13 @@ options:
                 new_secret:
                     description:
                         - The actual password value that will be assigned for the CPM action to be taken
+                    type: str
+                perform_management_action:
+                    description:
+                        - C(always) will perform the management action in every action
+                        - C(on_create) will only perform the management action right after the account is created
+                    choices: [always, on_create]
+                    default: always
                     type: str
     remote_machines_access:
         description:
