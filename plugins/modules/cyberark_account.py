@@ -75,7 +75,7 @@ options:
         type: str
     address:
         description:
-            - The adress of the endpoint where the privileged account is located
+            - The address of the endpoint where the privileged account is located
         required: false
         type: str
     name:
@@ -122,6 +122,13 @@ options:
                 new_secret:
                     description:
                         - The actual password value that will be assigned for the CPM action to be taken
+                    type: str
+                perform_management_action:
+                    description:
+                        - C(always) will perform the management action in every action
+                        - C(on_create) will only perform the management action right after the account is created
+                    choices: [always, on_create]
+                    default: always
                     type: str
     remote_machines_access:
         description:
@@ -324,7 +331,8 @@ ansible_specific_parameters = ["state", "api_base_url",
                                "new_secret",
                                "secret_management.management_action", 
                                "secret_management.new_secret",
-                               "management_action"]
+                               "management_action",
+                               "secret_management.perform_management_action"]
                                
 cyberark_fixed_properties = ["createdTime",
                              "id",
@@ -437,8 +445,6 @@ def update_account(module, existing_account):
                         payload["Operations"].append({"op": "replace", "path": "/%s" % cyberark_property_name, "value": replacing})
                     if len(removing) > 0:
                         payload["Operations"].append({"op": "remove", "path": "/%s" % cyberark_property_name, "value": removing})
-#                         for property_to_remove in removing:
-#                             payload["Operations"].append({"op": "remove", "path": property_to_remove})
                 else:
                     if existing_account_value is not None:
                         if module_parm_value == removal_value:
@@ -452,47 +458,56 @@ def update_account(module, existing_account):
                     logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
                             
     if (len(payload["Operations"]) != 0):
-        logging.debug("Processing invidual operations (%d) => %s" % (len(payload["Operations"]), json.dumps(payload)))
-        for operation in payload["Operations"]:
-            individual_payload = [operation]
-            try:
-               logging.debug(" ==> %s" % json.dumps([operation]))
-               response = open_url(
-                   api_base_url + end_point,
-                   method=HTTPMethod,
-                   headers=headers,
-                   data=json.dumps(individual_payload),
-                   validate_certs=validate_certs)
-        
-               result = {"result": json.loads(response.read())}
-               changed = True
-               last_status_code = response.getcode()
-        
-#                return (True, result, response.getcode())
-        
-            except (HTTPError, httplib.HTTPException) as http_exception:
-        
-                if isinstance(http_exception, HTTPError):
-                    res = json.load(http_exception)
-                else:
-                    res = to_text(http_exception)
-
-                module.fail_json(
-                    msg=("Error while performing update_account."
-                         "Please validate parameters provided."
-                         "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
-                    payload=individual_payload,
-                    headers=headers,
-                    status_code=http_exception.code)
-        
-            except Exception as unknown_exception:
-        
-                module.fail_json(
-                    msg=("Unknown error while performing update_account."
-                         "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
-                    payload=individual_payload,
-                    headers=headers,
-                    status_code=-1)
+        if module.check_mode:
+            logging.debug("Proceeding with Update Account (CHECK_MODE)")
+            logging.debug("Operations => %s" % json.dumps(payload))
+            result = {"result": existing_account}
+            changed = True
+            last_status_code = -1
+        else:
+            logging.debug("Proceeding with Update Account")
+    
+            logging.debug("Processing invidual operations (%d) => %s" % (len(payload["Operations"]), json.dumps(payload)))
+            for operation in payload["Operations"]:
+                individual_payload = [operation]
+                try:
+                   logging.debug(" ==> %s" % json.dumps([operation]))
+                   response = open_url(
+                       api_base_url + end_point,
+                       method=HTTPMethod,
+                       headers=headers,
+                       data=json.dumps(individual_payload),
+                       validate_certs=validate_certs)
+            
+                   result = {"result": json.loads(response.read())}
+                   changed = True
+                   last_status_code = response.getcode()
+            
+    #                return (True, result, response.getcode())
+            
+                except (HTTPError, httplib.HTTPException) as http_exception:
+            
+                    if isinstance(http_exception, HTTPError):
+                        res = json.load(http_exception)
+                    else:
+                        res = to_text(http_exception)
+    
+                    module.fail_json(
+                        msg=("Error while performing update_account."
+                             "Please validate parameters provided."
+                             "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
+                        payload=individual_payload,
+                        headers=headers,
+                        status_code=http_exception.code)
+            
+                except Exception as unknown_exception:
+            
+                    module.fail_json(
+                        msg=("Unknown error while performing update_account."
+                             "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                        payload=individual_payload,
+                        headers=headers,
+                        status_code=-1)
     
     return(changed, result, last_status_code)
 
@@ -540,16 +555,21 @@ def add_account(module):
 
     try:
 
-       response = open_url(
-           api_base_url + end_point,
-           method=HTTPMethod,
-           headers=headers,
-           data=json.dumps(payload),
-           validate_certs=validate_certs)
-
-       result = {"result": json.loads(response.read())}
-
-       return (True, result, response.getcode())
+        if module.check_mode:
+            logging.debug("Proceeding with Add Account (CHECK_MODE)")
+            return(True, {"result": None}, -1)
+        else:
+            logging.debug("Proceeding with Add Account")
+            response = open_url(
+               api_base_url + end_point,
+               method=HTTPMethod,
+               headers=headers,
+               data=json.dumps(payload),
+               validate_certs=validate_certs)
+            
+            result = {"result": json.loads(response.read())}
+            
+            return (True, result, response.getcode())
 
     except (HTTPError, httplib.HTTPException) as http_exception:
 
@@ -577,54 +597,58 @@ def add_account(module):
             status_code=-1)
 
 def delete_account(module, existing_account):
+    
+    if module.check_mode:
+        logging.debug("Deleting Account (CHECK_MODE)")
+        return (True, {"result": None}, -1)
+    else:
+        logging.debug("Deleting Account")
+    
+        cyberark_session = module.params["cyberark_session"]
+        api_base_url = cyberark_session["api_base_url"]
+        validate_certs = cyberark_session["validate_certs"]
 
-    logging.debug("Deleting Account")
+        # Prepare result, end_point, and headers
+        result = {}
+        HTTPMethod = "DELETE"
+        end_point = "/PasswordVault/api/Accounts/%s" % existing_account["id"]
+    
+        headers = {'Content-Type': 'application/json',
+                   "Authorization": cyberark_session["token"]}
 
-    cyberark_session = module.params["cyberark_session"]
-    api_base_url = cyberark_session["api_base_url"]
-    validate_certs = cyberark_session["validate_certs"]
-
-    # Prepare result, end_point, and headers
-    result = {}
-    HTTPMethod = "DELETE"
-    end_point = "/PasswordVault/api/Accounts/%s" % existing_account["id"]
-
-    headers = {'Content-Type': 'application/json',
-               "Authorization": cyberark_session["token"]}
-
-    try:
-
-       response = open_url(
-           api_base_url + end_point,
-           method=HTTPMethod,
-           headers=headers,
-           validate_certs=validate_certs)
-
-       result = {"result": None}
-
-       return (True, result, response.getcode())
-
-    except (HTTPError, httplib.HTTPException) as http_exception:
-
-        if isinstance(http_exception, HTTPError):
-            res = json.load(http_exception)
-        else:
-            res = to_text(http_exception)
-
-        module.fail_json(
-            msg=("Error while performing delete_account."
-                 "Please validate parameters provided."
-                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
-            headers=headers,
-            status_code=http_exception.code)
-
-    except Exception as unknown_exception:
-
-        module.fail_json(
-            msg=("Unknown error while performing delete_account."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
-            headers=headers,
-            status_code=-1)
+        try:
+    
+           response = open_url(
+               api_base_url + end_point,
+               method=HTTPMethod,
+               headers=headers,
+               validate_certs=validate_certs)
+    
+           result = {"result": None}
+    
+           return (True, result, response.getcode())
+    
+        except (HTTPError, httplib.HTTPException) as http_exception:
+    
+            if isinstance(http_exception, HTTPError):
+                res = json.load(http_exception)
+            else:
+                res = to_text(http_exception)
+    
+            module.fail_json(
+                msg=("Error while performing delete_account."
+                     "Please validate parameters provided."
+                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
+                headers=headers,
+                status_code=http_exception.code)
+    
+        except Exception as unknown_exception:
+    
+            module.fail_json(
+                msg=("Unknown error while performing delete_account."
+                     "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                headers=headers,
+                status_code=-1)
 
 def reset_account_if_needed(module, existing_account):
 
@@ -641,74 +665,82 @@ def reset_account_if_needed(module, existing_account):
     result = {}
     end_point = None
     payload = {}
+    existing_account_id = None
+    if existing_account is not None:
+        existing_account_id = existing_account["id"]
+    elif module.check_mode:
+        existing_account_id = 9999
     
     if management_action == "change" and cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND":
         logging.debug("CPM change secret for next CPM cycle")
-        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account["id"]
+        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account_id
         payload["ChangeImmediately"] = False
         payload["NewCredentials"] = cpm_new_secret
     elif management_action == "change_immediately" and (cpm_new_secret == "NOT_FOUND" or cpm_new_secret is None):
         logging.debug("CPM change_immediately with random secret")
-        end_point = "/PasswordVault/API/Accounts/%s/Change" % existing_account["id"]
+        end_point = "/PasswordVault/API/Accounts/%s/Change" % existing_account_id
         payload["ChangeEntireGroup"] = True
     elif management_action == "change_immediately" and (cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND"):
         logging.debug("CPM change immediately secret for next CPM cycle")
-        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account["id"]
+        end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account_id
         payload["ChangeImmediately"] = True
         payload["NewCredentials"] = cpm_new_secret
     elif management_action == "reconcile":
         logging.debug("CPM reconcile secret")
-        end_point = "/PasswordVault/API/Accounts/%s/Reconcile" % existing_account["id"]
+        end_point = "/PasswordVault/API/Accounts/%s/Reconcile" % existing_account_id
     elif "new_secret" in module.params.keys() and module.params["new_secret"] is not None:
         logging.debug("Change Credential in Vault")
-        end_point = "/PasswordVault/API/Accounts/%s/Password/Update" % existing_account["id"]
+        end_point = "/PasswordVault/API/Accounts/%s/Password/Update" % existing_account_id
         payload["ChangeEntireGroup"] = True
         payload["NewCredentials"] = module.params["new_secret"]
     
     
-    if end_point is not None:  
-        logging.debug("Proceeding with Credential Rotation")
-
-        headers = {'Content-Type': 'application/json',
-                   "Authorization": cyberark_session["token"]}
-        HTTPMethod = "POST"
-        try:
+    if end_point is not None:
     
-           response = open_url(
-               api_base_url + end_point,
-               method=HTTPMethod,
-               headers=headers,
-               data=json.dumps(payload),
-               validate_certs=validate_certs)
+        if module.check_mode:
+            logging.debug("Proceeding with Credential Rotation (CHECK_MODE)")
+            return(True, result, -1)
+        else:
+            logging.debug("Proceeding with Credential Rotation")
     
-           result = {"result": None}
+            result = {"result": None}
+            headers = {'Content-Type': 'application/json',
+                       "Authorization": cyberark_session["token"]}
+            HTTPMethod = "POST"
+            try:
+        
+               response = open_url(
+                   api_base_url + end_point,
+                   method=HTTPMethod,
+                   headers=headers,
+                   data=json.dumps(payload),
+                   validate_certs=validate_certs)
+                
+               return (True, result, response.getcode())
+        
+            except (HTTPError, httplib.HTTPException) as http_exception:
     
-           return (True, result, response.getcode())
-    
-        except (HTTPError, httplib.HTTPException) as http_exception:
-
-            if isinstance(http_exception, HTTPError):
-                res = json.load(http_exception)
-            else:
-                res = to_text(http_exception)
-            
-            module.fail_json(
-                msg=("Error while performing reset_account."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
-                headers=headers,
-                payload=payload,
-                status_code=http_exception.code)
-    
-        except Exception as unknown_exception:
-    
-            module.fail_json(
-                msg=("Unknown error while performing delete_account."
-                     "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
-                headers=headers,
-                payload=payload,
-                status_code=-1)
-
+                if isinstance(http_exception, HTTPError):
+                    res = json.load(http_exception)
+                else:
+                    res = to_text(http_exception)
+                
+                module.fail_json(
+                    msg=("Error while performing reset_account."
+                         "Please validate parameters provided."
+                         "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
+                    headers=headers,
+                    payload=payload,
+                    status_code=http_exception.code)
+        
+            except Exception as unknown_exception:
+        
+                module.fail_json(
+                    msg=("Unknown error while performing delete_account."
+                         "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                    headers=headers,
+                    payload=payload,
+                    status_code=-1)
         
     else:
         return(False, result, -1)
@@ -872,7 +904,8 @@ def main():
                                             "automatic_management_enabled": {"type": "bool"}, 
                                             "manual_management_reason": {"type": "str"},
                                             "management_action": {"type": "str", "choices": ["change", "change_immediately", "reconcile"]},
-                                            "new_secret": {"type": "str", "no_log": True}
+                                            "new_secret": {"type": "str", "no_log": True},
+                                            "perform_management_action": {"type": "str", "choices": ["on_create", "always"], "default": "always"},
                                          }
                              },
         "remote_machines_access": {"required": False, "type": "dict", "options": {"remote_machines": {"type": "str"}, "access_restricted_to_remote_machines": {"type": "bool"}}},
@@ -903,10 +936,15 @@ def main():
         else: # Account does not exist, and we need to create it
             (changed, result, status_code) = add_account(module)
         
+        perform_management_action = None
+        if "secret_management" in module.params.keys():
+            perform_management_action = module.params["secret_management"]["perform_management_action"]
+        
         logging.debug("Result=>%s" % json.dumps(result))
-        (account_reset, reset_result, reset_status_code) = reset_account_if_needed(module, result["result"])
-        if account_reset:
-            changed = True
+        if perform_management_action == "always" or (perform_management_action == "on_create" and not found):
+            (account_reset, reset_result, reset_status_code) = reset_account_if_needed(module, result["result"])
+            if account_reset:
+                changed = True
     
     elif (found and state == "absent"):
         (changed, result, status_code) = delete_account(module, account_record)
