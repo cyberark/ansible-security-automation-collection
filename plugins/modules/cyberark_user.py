@@ -454,7 +454,6 @@ def main():
     logging.info("Starting Module")
 
     state = module.params['state']
-    new_password = module.params['new_password']
     group_name = module.params['group_name']
 
     if (state == "present"):

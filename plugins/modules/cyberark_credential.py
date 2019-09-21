@@ -182,6 +182,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module.utils.six.moves.urllib.parse import quote
 import json
 import urllib
 try:
@@ -191,7 +192,7 @@ except ImportError:
     import http.client as httplib
 
 
-def retrieveCredential(module):
+def retrieve_credential(module):
 
     # Getting parameters from module
 
@@ -204,16 +205,19 @@ def retrieveCredential(module):
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
-    
+
     if "client_cert" in module.params:
         client_cert = module.params["client_cert"]
     if "client_key" in module.params:
         client_key = module.params["client_key"]
 
-    end_point = "/AIMWebService/api/Accounts?AppId=%s&Query=%s&ConnectionTimeout=%s&QueryFormat=%s&FailRequestOnPasswordChange=%s" % (urllib.quote(app_id), urllib.quote(query), connection_timeout, query_format, fail_request_on_password_change)
-    
+    end_point = ("/AIMWebService/api/Accounts?AppId=%s&Query=%s&ConnectionTimeout=%s&QueryFormat=%s"
+                 "&FailRequestOnPasswordChange=%s") % (quote(app_id), quote(query),
+                                                       connection_timeout, query_format,
+                                                       fail_request_on_password_change)
+
     if "reason" in module.params and module.params["reason"] != None:
-        reason = urllib.quote(module.params["reason"])
+        reason = quote(module.params["reason"])
         end_point = end_point + "&reason=%s" % reason
 
     result = None
@@ -232,15 +236,18 @@ def retrieveCredential(module):
 
         module.fail_json(
             msg=("Error while retrieving credential."
-                 "Please validate parameters provided, and permissions for the application and provider in CyberArk."
-                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
+                 "Please validate parameters provided, and permissions for "
+                 "the application and provider in CyberArk."
+                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point,
+                                                    to_text(http_exception))),
             status_code=http_exception.code)
 
     except Exception as unknown_exception:
 
         module.fail_json(
             msg=("Unknown error while retrieving credential."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point,
+                                               to_text(unknown_exception))),
             status_code=-1)
 
     if response.getcode() == 200:  # Success
@@ -248,9 +255,9 @@ def retrieveCredential(module):
         # Result token from REST Api uses a different key based
         try:
             result = json.loads(response.read())
-        except Exception as e:
+        except Exception as exc:
             module.fail_json(
-                msg="Error obtain cyberark credential result from http body\n%s" % (to_text(e)),
+                msg="Error obtain cyberark credential result from http body\n%s" % (to_text(exc)),
                 status_code=-1)
 
         return (result, response.getcode())
@@ -268,7 +275,8 @@ def main():
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},
         "connection_timeout": {"required": False, "type": "int", "default": 30},
-        "query_format": {"required": False, "type": "str", "choices": ["Exact", "Regexp"], "default": "Exact"},
+        "query_format": {"required": False, "type": "str", "choices": ["Exact", "Regexp"],
+                         "default": "Exact"},
         "fail_request_on_password_change": {"required": False, "type": "bool", "default": False},
         "validate_certs": {"type": "bool",
                            "default": True},
@@ -283,7 +291,7 @@ def main():
         argument_spec=fields,
         supports_check_mode=True)
 
-    (result, status_code) = retrieveCredential(module)
+    (result, status_code) = retrieve_credential(module)
 
     module.exit_json(
         changed=False,

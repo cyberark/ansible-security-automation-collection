@@ -309,6 +309,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module.utils.six.moves.urllib.parse import quote
 import json
 import urllib
 try:
@@ -316,24 +317,23 @@ try:
 except ImportError:
     # Python 3
     import http.client as httplib
-    
 import sys
 import logging
 
 _empty = object()
 
-ansible_specific_parameters = ["state", "api_base_url", 
+ansible_specific_parameters = ["state", "api_base_url",
                                "validate_certs",
                                "cyberark_session",
                                "identified_by",
                                "logging_level",
                                "logging_file",
                                "new_secret",
-                               "secret_management.management_action", 
+                               "secret_management.management_action",
                                "secret_management.new_secret",
                                "management_action",
                                "secret_management.perform_management_action"]
-                               
+
 cyberark_fixed_properties = ["createdTime",
                              "id",
                              "name",
@@ -379,11 +379,11 @@ def equal_value(existing, parameter):
         return existing == str(parameter)
     else:
         return str(existing) == str(parameter)
-        
+
 
 
 def update_account(module, existing_account):
-    
+
     logging.debug("Updating Account")
 
     cyberark_session = module.params["cyberark_session"]
@@ -400,7 +400,7 @@ def update_account(module, existing_account):
 
     headers = {'Content-Type': 'application/json',
                "Authorization": cyberark_session["token"]}
-    
+
     payload = {"Operations": []}
 
     # Determining whether to add or update properties
@@ -420,7 +420,7 @@ def update_account(module, existing_account):
                         if nested_parm_name not in ansible_specific_parameters: # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
 #                             logging.debug("Existing Account Value: %s  cyberark_property_name=%s existing_account:%s" % (existing_account_value, cyberark_property_name, existing_account))
                             child_module_parm_value = module_parm_value[child_parm_name]
-                            child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames,default=child_parm_name)
+                            child_cyberark_property_name = referenced_value(child_parm_name, cyberark_reference_fieldnames, default=child_parm_name)
                             child_existing_account_value = referenced_value(child_cyberark_property_name, existing_account_value, existing_account_value.keys() if existing_account_value is not None else {})
                             path_value = "/%s/%s" % (cyberark_property_name, child_cyberark_property_name)
                             if child_existing_account_value is not None:
@@ -438,7 +438,7 @@ def update_account(module, existing_account):
 #                                 payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
                             logging.debug("parameter_name=%s  value=%s existing=%s" % (path_value, child_module_parm_value, child_existing_account_value))
                     # Processing child operations
-                    if len(adding.keys()) > 0 :
+                    if len(adding.keys()) > 0:
                         payload["Operations"].append({"op": "add", "path": "/%s" % cyberark_property_name, "value": adding})
                     if len(replacing.keys()) > 0:
                         payload["Operations"].append({"op": "replace", "path": "/%s" % cyberark_property_name, "value": replacing})
@@ -455,8 +455,8 @@ def update_account(module, existing_account):
                         # Adding a property value
                         payload["Operations"].append({"op": "add", "value": module_parm_value, "path": "/%s" % cyberark_property_name})
                     logging.debug("parameter_name=%s  value=%s existing=%s" % (parameter_name, module_parm_value, existing_account_value))
-                            
-    if (len(payload["Operations"]) != 0):
+
+    if len(payload["Operations"]) != 0:
         if module.check_mode:
             logging.debug("Proceeding with Update Account (CHECK_MODE)")
             logging.debug("Operations => %s" % json.dumps(payload))
@@ -465,32 +465,32 @@ def update_account(module, existing_account):
             last_status_code = -1
         else:
             logging.debug("Proceeding with Update Account")
-    
+
             logging.debug("Processing invidual operations (%d) => %s" % (len(payload["Operations"]), json.dumps(payload)))
             for operation in payload["Operations"]:
                 individual_payload = [operation]
                 try:
-                   logging.debug(" ==> %s" % json.dumps([operation]))
-                   response = open_url(
-                       api_base_url + end_point,
-                       method=HTTPMethod,
-                       headers=headers,
-                       data=json.dumps(individual_payload),
-                       validate_certs=validate_certs)
-            
-                   result = {"result": json.loads(response.read())}
-                   changed = True
-                   last_status_code = response.getcode()
-            
+                    logging.debug(" ==> %s" % json.dumps([operation]))
+                    response = open_url(
+                        api_base_url + end_point,
+                        method=HTTPMethod,
+                        headers=headers,
+                        data=json.dumps(individual_payload),
+                        validate_certs=validate_certs)
+
+                    result = {"result": json.loads(response.read())}
+                    changed = True
+                    last_status_code = response.getcode()
+
     #                return (True, result, response.getcode())
-            
+
                 except (HTTPError, httplib.HTTPException) as http_exception:
-            
+
                     if isinstance(http_exception, HTTPError):
                         res = json.load(http_exception)
                     else:
                         res = to_text(http_exception)
-    
+
                     module.fail_json(
                         msg=("Error while performing update_account."
                              "Please validate parameters provided."
@@ -498,16 +498,16 @@ def update_account(module, existing_account):
                         payload=individual_payload,
                         headers=headers,
                         status_code=http_exception.code)
-            
+
                 except Exception as unknown_exception:
-            
+
                     module.fail_json(
                         msg=("Unknown error while performing update_account."
                              "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
                         payload=individual_payload,
                         headers=headers,
                         status_code=-1)
-    
+
     return(changed, result, last_status_code)
 
 
@@ -560,14 +560,14 @@ def add_account(module):
         else:
             logging.debug("Proceeding with Add Account")
             response = open_url(
-               api_base_url + end_point,
-               method=HTTPMethod,
-               headers=headers,
-               data=json.dumps(payload),
-               validate_certs=validate_certs)
-            
+                api_base_url + end_point,
+                method=HTTPMethod,
+                headers=headers,
+                data=json.dumps(payload),
+                validate_certs=validate_certs)
+
             result = {"result": json.loads(response.read())}
-            
+
             return (True, result, response.getcode())
 
     except (HTTPError, httplib.HTTPException) as http_exception:
@@ -595,13 +595,13 @@ def add_account(module):
             status_code=-1)
 
 def delete_account(module, existing_account):
-    
+
     if module.check_mode:
         logging.debug("Deleting Account (CHECK_MODE)")
         return (True, {"result": None}, -1)
     else:
         logging.debug("Deleting Account")
-    
+
         cyberark_session = module.params["cyberark_session"]
         api_base_url = cyberark_session["api_base_url"]
         validate_certs = cyberark_session["validate_certs"]
@@ -610,38 +610,38 @@ def delete_account(module, existing_account):
         result = {}
         HTTPMethod = "DELETE"
         end_point = "/PasswordVault/api/Accounts/%s" % existing_account["id"]
-    
+
         headers = {'Content-Type': 'application/json',
                    "Authorization": cyberark_session["token"]}
 
         try:
-    
-           response = open_url(
-               api_base_url + end_point,
-               method=HTTPMethod,
-               headers=headers,
-               validate_certs=validate_certs)
-    
-           result = {"result": None}
-    
-           return (True, result, response.getcode())
-    
+
+            response = open_url(
+                api_base_url + end_point,
+                method=HTTPMethod,
+                headers=headers,
+                validate_certs=validate_certs)
+
+            result = {"result": None}
+
+            return (True, result, response.getcode())
+
         except (HTTPError, httplib.HTTPException) as http_exception:
-    
+
             if isinstance(http_exception, HTTPError):
                 res = json.load(http_exception)
             else:
                 res = to_text(http_exception)
-    
+
             module.fail_json(
                 msg=("Error while performing delete_account."
                      "Please validate parameters provided."
                      "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)),
                 headers=headers,
                 status_code=http_exception.code)
-    
+
         except Exception as unknown_exception:
-    
+
             module.fail_json(
                 msg=("Unknown error while performing delete_account."
                      "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
@@ -668,7 +668,7 @@ def reset_account_if_needed(module, existing_account):
         existing_account_id = existing_account["id"]
     elif module.check_mode:
         existing_account_id = 9999
-    
+
     if management_action == "change" and cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND":
         logging.debug("CPM change secret for next CPM cycle")
         end_point = "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account_id
@@ -691,38 +691,38 @@ def reset_account_if_needed(module, existing_account):
         end_point = "/PasswordVault/API/Accounts/%s/Password/Update" % existing_account_id
         payload["ChangeEntireGroup"] = True
         payload["NewCredentials"] = module.params["new_secret"]
-    
-    
+
+
     if end_point is not None:
-    
+
         if module.check_mode:
             logging.debug("Proceeding with Credential Rotation (CHECK_MODE)")
             return(True, result, -1)
         else:
             logging.debug("Proceeding with Credential Rotation")
-    
+
             result = {"result": None}
             headers = {'Content-Type': 'application/json',
                        "Authorization": cyberark_session["token"]}
             HTTPMethod = "POST"
             try:
-        
-               response = open_url(
-                   api_base_url + end_point,
-                   method=HTTPMethod,
-                   headers=headers,
-                   data=json.dumps(payload),
-                   validate_certs=validate_certs)
-                
-               return (True, result, response.getcode())
-        
+
+                response = open_url(
+                    api_base_url + end_point,
+                    method=HTTPMethod,
+                    headers=headers,
+                    data=json.dumps(payload),
+                    validate_certs=validate_certs)
+
+                return (True, result, response.getcode())
+
             except (HTTPError, httplib.HTTPException) as http_exception:
-    
+
                 if isinstance(http_exception, HTTPError):
                     res = json.load(http_exception)
                 else:
                     res = to_text(http_exception)
-                
+
                 module.fail_json(
                     msg=("Error while performing reset_account."
                          "Please validate parameters provided."
@@ -730,45 +730,45 @@ def reset_account_if_needed(module, existing_account):
                     headers=headers,
                     payload=payload,
                     status_code=http_exception.code)
-        
+
             except Exception as unknown_exception:
-        
+
                 module.fail_json(
                     msg=("Unknown error while performing delete_account."
                          "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
                     headers=headers,
                     payload=payload,
                     status_code=-1)
-        
+
     else:
         return(False, result, -1)
-    
+
 
 def referenced_value(field, dct, keys=None, default=None):
-  return dct[field] if field in (keys if keys is not None else dct) else default
-  
+    return dct[field] if field in (keys if keys is not None else dct) else default
+
 def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
-  result_dct = {}
-  for key in dotted_path.split('.'):
-    try:
-        key_field = key
-        if use_reference_table:
-            key_field = referenced_value(key, cyberark_reference_fieldnames, default=key)
+    result_dct = {}
+    for key in dotted_path.split('.'):
+        try:
+            key_field = key
+            if use_reference_table:
+                key_field = referenced_value(key, cyberark_reference_fieldnames, default=key)
 
-        if len(result_dct.keys()) == 0: # No result_dct set yet
-            result_dct = dct
+            if len(result_dct.keys()) == 0: # No result_dct set yet
+                result_dct = dct
 
-        logging.debug("keys=%s key_field=>%s   key=>%s" % (",".join(result_dct.keys()), key_field, key))
-        result_dct = result_dct[key_field] if key_field in result_dct.keys() else result_dct[key]
-        if result_dct is None:
+            logging.debug("keys=%s key_field=>%s   key=>%s" % (",".join(result_dct.keys()), key_field, key))
+            result_dct = result_dct[key_field] if key_field in result_dct.keys() else result_dct[key]
+            if result_dct is None:
+                return default
+
+        except KeyError as e:
+            logging.debug("KeyError " + to_text(e))
+            if default is _empty:
+                raise
             return default
-        
-    except KeyError as e:
-      logging.debug("KeyError " + to_text(e))
-      if default is _empty:
-        raise
-      return default
-  return result_dct
+    return result_dct
 
 def get_account(module):
 
@@ -776,27 +776,27 @@ def get_account(module):
 
     identified_by_fields = module.params["identified_by"].split(",")
     logging.debug("Identified_by: " + json.dumps(identified_by_fields))
-    safe_filter = urllib.quote("safeName eq ") + urllib.quote(module.params["safe"]) if "safe" in module.params and module.params["safe"] is not None else None
+    safe_filter = quote("safeName eq ") + quote(module.params["safe"]) if "safe" in module.params and module.params["safe"] is not None else None
     search_string = None
     for field in identified_by_fields:
-      if field not in ansible_specific_parameters:
-        search_string = "%s%s" % (search_string + " " if search_string is not None else "", deep_get(module.params, field, "NOT FOUND", False))
-    
+        if field not in ansible_specific_parameters:
+            search_string = "%s%s" % (search_string + " " if search_string is not None else "", deep_get(module.params, field, "NOT FOUND", False))
+
     logging.debug("Search_String => %s" % search_string)
     logging.debug("Safe Filter => %s" % safe_filter)
-    
+
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
-    
+
     end_point = None
     if search_string is not None and safe_filter is not None:
-        end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (safe_filter, urllib.quote(search_string.lstrip()))
+        end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (safe_filter, quote(search_string.lstrip()))
     elif search_string is not None:
         end_point = "/PasswordVault/api/accounts?search=%s" % (search_string.lstrip())
     else:
         end_point = "/PasswordVault/api/accounts?filter=%s" % (safe_filter)
-    
+
     logging.debug("End Point => " + end_point)
 
     headers = {'Content-Type': 'application/json'}
@@ -810,12 +810,12 @@ def get_account(module):
             method="GET",
             headers=headers,
             validate_certs=validate_certs)
-        
+
         result_string = response.read()
         accounts_data = json.loads(result_string)
-        
+
         logging.debug("RESULT => " + json.dumps(accounts_data))
-        
+
         if accounts_data["count"] == 0:
             return (False, None, response.getcode())
         else:
@@ -836,7 +836,7 @@ def get_account(module):
                 if found:
                     how_many = how_many + 1
                     if first_record_found is None:
-                        first_record_found = account_record 
+                        first_record_found = account_record
 
             logging.debug("How Many: %d  First Record Found => %s" % (how_many, json.dumps(first_record_found)))
             if how_many > 1: # too many records found
@@ -844,7 +844,7 @@ def get_account(module):
                     msg="Error while performing get_account. Too many rows (%d) found matching your criteria!" % how_many)
             else:
                 return(how_many == 1, first_record_found, response.getcode())
-            
+
     except (HTTPError, httplib.HTTPException) as http_exception:
 
         if http_exception.code == 404:
@@ -869,77 +869,69 @@ def get_account(module):
 def main():
 
     fields = {
-        "state": {"type": "str",
-                  "choices": ["present", "absent"],
-                  "default": "present"},
-        "logging_level": {"type": "str",
-                  "choices": ["NOTSET", "DEBUG", "INFO"]},
+        "state": {"type": "str", "choices": ["present", "absent"], "default": "present"},
+        "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
         "logging_file": {"type": "str", "default": "/tmp/ansible_cyberark.log"},
         "api_base_url": {"type": "str"},
-        "validate_certs": {"type": "bool",
-                           "default": "true"},
+        "validate_certs": {"type": "bool", "default": "true"},
         "cyberark_session": {"required": True, "type": "dict", "no_log": True},
         "identified_by": {"required": False, "type": "str", "default": "username,address,platform_id"},
         "safe": {"required": True, "type": "str"},
         "platform_id": {"required": False, "type": "str"},
         "address": {"required": False, "type": "str"},
         "name": {"required": False, "type": "str"},
-        "secret_type": {
-                        "required": False, 
-                        "type": "str",
-                        "choices": ["password", "key"],
-                        "default": "password"
-                       },
+        "secret_type": {"required": False, "type": "str", "choices": ["password", "key"], "default": "password"},
         "secret": {"required": False, "type": "str", "no_log": True},
         "new_secret": {"required": False, "type": "str", "no_log": True},
         "username": {"required": False, "type": "str"},
-        "secret_management": {"required": False, "type": "dict", 
-                              "options": {
-                                            "automatic_management_enabled": {"type": "bool"}, 
-                                            "manual_management_reason": {"type": "str"},
-                                            "management_action": {"type": "str", "choices": ["change", "change_immediately", "reconcile"]},
-                                            "new_secret": {"type": "str", "no_log": True},
-                                            "perform_management_action": {"type": "str", "choices": ["on_create", "always"], "default": "always"},
-                                         }
-                             },
-        "remote_machines_access": {"required": False, "type": "dict", "options": {"remote_machines": {"type": "str"}, "access_restricted_to_remote_machines": {"type": "bool"}}},
+        "secret_management": {"required": False, "type": "dict", "options": {
+            "automatic_management_enabled": {"type": "bool"},
+            "manual_management_reason": {"type": "str"},
+            "management_action": {"type": "str", "choices": ["change", "change_immediately", "reconcile"]},
+            "new_secret": {"type": "str", "no_log": True},
+            "perform_management_action": {"type": "str", "choices": ["on_create", "always"], "default": "always"},
+            }},
+        "remote_machines_access": {"required": False, "type": "dict", "options": {
+            "remote_machines": {"type": "str"},
+            "access_restricted_to_remote_machines": {"type": "bool"}
+            }},
         "platform_account_properties": {"required": False, "type": "dict"},
     }
-    
+
     module = AnsibleModule(
         argument_spec=fields,
         supports_check_mode=True)
 
     if module.params["logging_level"] is not None:
         logging.basicConfig(filename=module.params["logging_file"], level=module.params["logging_level"])
-    
+
     logging.info("Starting Module")
 
     state = module.params["state"]
 
     (found, account_record, status_code) = get_account(module)
     logging.debug("Account was %s, status_code=%s" %("FOUND" if found else "NOT FOUND", status_code))
-    
+
     changed = False
     result = {"result": account_record}
-    
-    if (state == "present"):
-    
+
+    if state == "present":
+
         if found: # Account already exists, let's verify if we need to update it
             (changed, result, status_code) = update_account(module, account_record)
         else: # Account does not exist, and we need to create it
             (changed, result, status_code) = add_account(module)
-        
+
         perform_management_action = None
         if "secret_management" in module.params.keys():
             perform_management_action = module.params["secret_management"]["perform_management_action"]
-        
+
         logging.debug("Result=>%s" % json.dumps(result))
         if perform_management_action == "always" or (perform_management_action == "on_create" and not found):
             (account_reset, _, _) = reset_account_if_needed(module, result["result"])
             if account_reset:
                 changed = True
-    
+
     elif (found and state == "absent"):
         (changed, result, status_code) = delete_account(module, account_record)
 
