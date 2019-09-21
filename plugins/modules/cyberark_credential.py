@@ -3,13 +3,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: cyberark_credential
 short_description: Module for retrieval of CyberArk vaulted credential using PAS Web Services SDK through the Central Credential Provider 
@@ -87,9 +90,9 @@ options:
         required: 'Only if the Policy managing the object requires it'
         description:
             - Reason for requesting credential if required by policy
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: credential retrieval basic
   cyberark_credential:
     api_base_url: "http://10.10.0.1"
@@ -117,9 +120,9 @@ EXAMPLES = '''
 
   result:
      { api_base_url }"/AIMWebService/api/Accounts?AppId="{ app_id }"&Query="{ query }"&ConnectionTimeout="{ connection_timeout }"&QueryFormat="{ query_format }"&FailRequestOnPasswordChange="{ fail_request_on_password_change }
-'''
+"""
 
-RETURN = '''
+RETURN = """
 "{{}}": {
     "changed": false,
     "failed": false,
@@ -176,7 +179,7 @@ RETURN = '''
         "status_code": 200
     }
 }
-'''
+"""
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
@@ -185,6 +188,7 @@ from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module.utils.six.moves.urllib.parse import quote
 import json
 import urllib
+
 try:
     import httplib
 except ImportError:
@@ -211,10 +215,16 @@ def retrieve_credential(module):
     if "client_key" in module.params:
         client_key = module.params["client_key"]
 
-    end_point = ("/AIMWebService/api/Accounts?AppId=%s&Query=%s&ConnectionTimeout=%s&QueryFormat=%s"
-                 "&FailRequestOnPasswordChange=%s") % (quote(app_id), quote(query),
-                                                       connection_timeout, query_format,
-                                                       fail_request_on_password_change)
+    end_point = (
+        "/AIMWebService/api/Accounts?AppId=%s&Query=%s&ConnectionTimeout=%s&QueryFormat=%s"
+        "&FailRequestOnPasswordChange=%s"
+    ) % (
+        quote(app_id),
+        quote(query),
+        connection_timeout,
+        query_format,
+        fail_request_on_password_change,
+    )
 
     if "reason" in module.params and module.params["reason"] != None:
         reason = quote(module.params["reason"])
@@ -230,25 +240,32 @@ def retrieve_credential(module):
             method="GET",
             validate_certs=validate_certs,
             client_cert=client_cert,
-            client_key=client_key)
+            client_key=client_key,
+        )
 
     except (HTTPError, httplib.HTTPException) as http_exception:
 
         module.fail_json(
-            msg=("Error while retrieving credential."
-                 "Please validate parameters provided, and permissions for "
-                 "the application and provider in CyberArk."
-                 "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point,
-                                                    to_text(http_exception))),
-            status_code=http_exception.code)
+            msg=(
+                "Error while retrieving credential."
+                "Please validate parameters provided, and permissions for "
+                "the application and provider in CyberArk."
+                "\n*** end_point=%s%s\n ==> %s"
+                % (api_base_url, end_point, to_text(http_exception))
+            ),
+            status_code=http_exception.code,
+        )
 
     except Exception as unknown_exception:
 
         module.fail_json(
-            msg=("Unknown error while retrieving credential."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point,
-                                               to_text(unknown_exception))),
-            status_code=-1)
+            msg=(
+                "Unknown error while retrieving credential."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
+            status_code=-1,
+        )
 
     if response.getcode() == 200:  # Success
 
@@ -257,15 +274,16 @@ def retrieve_credential(module):
             result = json.loads(response.read())
         except Exception as exc:
             module.fail_json(
-                msg="Error obtain cyberark credential result from http body\n%s" % (to_text(exc)),
-                status_code=-1)
+                msg="Error obtain cyberark credential result from http body\n%s"
+                % (to_text(exc)),
+                status_code=-1,
+            )
 
         return (result, response.getcode())
 
     else:
-        module.fail_json(
-            msg="error in end_point=>" +
-            end_point)
+        module.fail_json(msg="error in end_point=>" + end_point)
+
 
 def main():
 
@@ -275,29 +293,29 @@ def main():
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},
         "connection_timeout": {"required": False, "type": "int", "default": 30},
-        "query_format": {"required": False, "type": "str", "choices": ["Exact", "Regexp"],
-                         "default": "Exact"},
-        "fail_request_on_password_change": {"required": False, "type": "bool", "default": False},
-        "validate_certs": {"type": "bool",
-                           "default": True},
+        "query_format": {
+            "required": False,
+            "type": "str",
+            "choices": ["Exact", "Regexp"],
+            "default": "Exact",
+        },
+        "fail_request_on_password_change": {
+            "required": False,
+            "type": "bool",
+            "default": False,
+        },
+        "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False},
-        "state": {"type": "str",
-                  "choices": ["present"],
-                  "default": "present"},
+        "state": {"type": "str", "choices": ["present"], "default": "present"},
     }
 
-    module = AnsibleModule(
-        argument_spec=fields,
-        supports_check_mode=True)
+    module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
 
     (result, status_code) = retrieve_credential(module)
 
-    module.exit_json(
-        changed=False,
-        result=result,
-        status_code=status_code)
+    module.exit_json(changed=False, result=result, status_code=status_code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

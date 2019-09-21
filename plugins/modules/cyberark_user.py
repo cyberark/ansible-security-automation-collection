@@ -5,13 +5,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'certified'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "certified",
+}
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: cyberark_user
 short_description: Module for CyberArk User Management using PAS Web Services SDK
@@ -91,9 +94,9 @@ options:
         description:
             - The name of the group the user will be added to.
         type: str
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 - name: Logon to CyberArk Vault using PAS Web Services SDK
   cyberark_authentication:
     api_base_url: https://components.cyberark.local
@@ -121,9 +124,9 @@ EXAMPLES = r'''
   cyberark_authentication:
     state: absent
     cyberark_session: '{{ cyberark_session }}'
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 changed:
     description: Whether there was a change done.
     type: bool
@@ -142,7 +145,7 @@ status_code:
     returned: success
     type: int
     sample: 200
-'''
+"""
 
 import json
 
@@ -167,9 +170,8 @@ def user_details(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(
-        username)
-    headers = {'Content-Type': 'application/json'}
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+    headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
 
     try:
@@ -178,7 +180,8 @@ def user_details(module):
             api_base_url + end_point,
             method="GET",
             headers=headers,
-            validate_certs=validate_certs)
+            validate_certs=validate_certs,
+        )
         result = {"result": json.loads(response.read())}
 
         return (False, result, response.getcode())
@@ -189,19 +192,27 @@ def user_details(module):
             return (False, None, http_exception.code)
         else:
             module.fail_json(
-                msg=("Error while performing user_details."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
+                msg=(
+                    "Error while performing user_details."
+                    "Please validate parameters provided."
+                    "\n*** end_point=%s%s\n ==> %s"
+                    % (api_base_url, end_point, to_text(http_exception))
+                ),
                 headers=headers,
-                status_code=http_exception.code)
+                status_code=http_exception.code,
+            )
 
     except Exception as unknown_exception:
 
         module.fail_json(
-            msg=("Unknown error while performing user_details."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+            msg=(
+                "Unknown error while performing user_details."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
             headers=headers,
-            status_code=-1)
+            status_code=-1,
+        )
 
 
 def user_add_or_update(module, HTTPMethod, existing_info):
@@ -216,8 +227,10 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     # Prepare result, paylod, and headers
     result = {}
     payload = {}
-    headers = {'Content-Type': 'application/json',
-               "Authorization": cyberark_session["token"]}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+    }
 
     # end_point and payload sets different depending on POST/PUT
     # for POST -- create -- payload contains username
@@ -245,13 +258,21 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     if "last_name" in module.params and module.params["last_name"] is not None:
         payload["LastName"] = module.params["last_name"]
 
-    if "change_password_on_the_next_logon" in module.params and module.params["change_password_on_the_next_logon"] is not None:
-        payload["ChangePasswordOnTheNextLogon"] = module.params["change_password_on_the_next_logon"]
+    if (
+        "change_password_on_the_next_logon" in module.params
+        and module.params["change_password_on_the_next_logon"] is not None
+    ):
+        payload["ChangePasswordOnTheNextLogon"] = module.params[
+            "change_password_on_the_next_logon"
+        ]
 
     if "expiry_date" in module.params and module.params["expiry_date"] is not None:
         payload["ExpiryDate"] = module.params["expiry_date"]
 
-    if "user_type_name" in module.params and module.params["user_type_name"] is not None:
+    if (
+        "user_type_name" in module.params
+        and module.params["user_type_name"] is not None
+    ):
         payload["UserTypeName"] = module.params["user_type_name"]
 
     if "disabled" in module.params and module.params["disabled"] is not None:
@@ -261,17 +282,34 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         payload["Location"] = module.params["location"]
 
     # --------------------------------------------------------------
-    logging.debug("HTTPMethod = " + HTTPMethod + "module.params = " + json.dumps(module.params))
+    logging.debug(
+        "HTTPMethod = " + HTTPMethod + "module.params = " + json.dumps(module.params)
+    )
     logging.debug("Existing Info: " + json.dumps(existing_info))
     logging.debug("payload => " + json.dumps(payload))
 
-    if HTTPMethod == "PUT" and (not "new_password" in module.params or module.params["new_password"] is None):
+    if HTTPMethod == "PUT" and (
+        not "new_password" in module.params or module.params["new_password"] is None
+    ):
         logging.info("Verifying if needs to be updated")
         proceed = False
-        updateable_fields = ["Email", "FirstName", "LastName", "ChangePasswordOnTheNextLogon", "ExpiryDate", "UserTypeName", "Disabled", "Location"]
+        updateable_fields = [
+            "Email",
+            "FirstName",
+            "LastName",
+            "ChangePasswordOnTheNextLogon",
+            "ExpiryDate",
+            "UserTypeName",
+            "Disabled",
+            "Location",
+        ]
         for field_name in updateable_fields:
             logging.debug("#### field_name : " + field_name)
-            if field_name in payload and field_name in existing_info and payload[field_name] != existing_info[field_name]:
+            if (
+                field_name in payload
+                and field_name in existing_info
+                and payload[field_name] != existing_info[field_name]
+            ):
                 logging.debug("Changing value for " + field_name)
                 proceed = True
     else:
@@ -280,38 +318,48 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     if proceed:
         logging.info("Proceeding to either update or create")
         try:
-    
+
             # execute REST action
             response = open_url(
                 api_base_url + end_point,
                 method=HTTPMethod,
                 headers=headers,
                 data=json.dumps(payload),
-                validate_certs=validate_certs)
-    
+                validate_certs=validate_certs,
+            )
+
             result = {"result": json.loads(response.read())}
-    
+
             return (True, result, response.getcode())
-    
+
         except (HTTPError, httplib.HTTPException) as http_exception:
-    
+
             module.fail_json(
-                msg=("Error while performing user_add_or_update."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, to_text(http_exception))),
+                msg=(
+                    "Error while performing user_add_or_update."
+                    "Please validate parameters provided."
+                    "\n*** end_point=%s%s\n ==> %s"
+                    % (api_base_url, end_point, to_text(http_exception))
+                ),
                 payload=payload,
                 headers=headers,
-                status_code=http_exception.code)
+                status_code=http_exception.code,
+            )
         except Exception as unknown_exception:
-    
+
             module.fail_json(
-                msg=("Unknown error while performing user_add_or_update."
-                     "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+                msg=(
+                    "Unknown error while performing user_add_or_update."
+                    "\n*** end_point=%s%s\n%s"
+                    % (api_base_url, end_point, to_text(unknown_exception))
+                ),
                 payload=payload,
                 headers=headers,
-                status_code=-1)
+                status_code=-1,
+            )
     else:
-        return(False, existing_info, 200)
+        return (False, existing_info, 200)
+
 
 def user_delete(module):
 
@@ -324,10 +372,9 @@ def user_delete(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(
-        username)
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
 
-    headers = {'Content-Type': 'application/json'}
+    headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
 
     try:
@@ -337,7 +384,8 @@ def user_delete(module):
             api_base_url + end_point,
             method="DELETE",
             headers=headers,
-            validate_certs=validate_certs)
+            validate_certs=validate_certs,
+        )
 
         result = {"result": {}}
 
@@ -352,19 +400,27 @@ def user_delete(module):
             return (False, result, http_exception.code)
         else:
             module.fail_json(
-                msg=("Error while performing user_delete."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, exception_text)),
+                msg=(
+                    "Error while performing user_delete."
+                    "Please validate parameters provided."
+                    "\n*** end_point=%s%s\n ==> %s"
+                    % (api_base_url, end_point, exception_text)
+                ),
                 headers=headers,
-                status_code=http_exception.code)
+                status_code=http_exception.code,
+            )
 
     except Exception as unknown_exception:
 
         module.fail_json(
-            msg=("Unknown error while performing user_delete."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+            msg=(
+                "Unknown error while performing user_delete."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
             headers=headers,
-            status_code=-1)
+            status_code=-1,
+        )
 
 
 def user_add_to_group(module):
@@ -380,9 +436,10 @@ def user_add_to_group(module):
     # Prepare result, end_point, headers and payload
     result = {}
     end_point = "/PasswordVault/WebServices/PIMServices.svc//Groups/{0}/Users".format(
-        group_name)
+        group_name
+    )
 
-    headers = {'Content-Type': 'application/json'}
+    headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
     payload = {"UserName": username}
 
@@ -394,7 +451,8 @@ def user_add_to_group(module):
             method="POST",
             headers=headers,
             data=json.dumps(payload),
-            validate_certs=validate_certs)
+            validate_certs=validate_certs,
+        )
 
         result = {"result": {}}
 
@@ -408,83 +466,100 @@ def user_add_to_group(module):
             return (False, None, http_exception.code)
         else:
             module.fail_json(
-                msg=("Error while performing user_add_to_group."
-                     "Please validate parameters provided."
-                     "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, exception_text)),
+                msg=(
+                    "Error while performing user_add_to_group."
+                    "Please validate parameters provided."
+                    "\n*** end_point=%s%s\n ==> %s"
+                    % (api_base_url, end_point, exception_text)
+                ),
                 payload=payload,
                 headers=headers,
-                status_code=http_exception.code)
+                status_code=http_exception.code,
+            )
 
     except Exception as unknown_exception:
 
         module.fail_json(
-            msg=("Unknown error while performing user_add_to_group."
-                 "\n*** end_point=%s%s\n%s" % (api_base_url, end_point, to_text(unknown_exception))),
+            msg=(
+                "Unknown error while performing user_add_to_group."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
             payload=payload,
             headers=headers,
-            status_code=-1)
+            status_code=-1,
+        )
 
 
 def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            username=dict(type='str', required=True),
-            state=dict(type='str', default='present', choices=['absent', 'present']),
-            logging_level=dict(type='str', default='NOTSET', choices=['NOTSET', 'DEBUG', 'INFO']),
-            logging_file=dict(type='str', default='/tmp/ansible_cyberark.log'),
-            cyberark_session=dict(type='dict', required=True),
-            initial_password=dict(type='str', no_log=True),
-            new_password=dict(type='str', no_log=True),
-            email=dict(type='str'),
-            first_name=dict(type='str'),
-            last_name=dict(type='str'),
-            change_password_on_the_next_logon=dict(type='bool'),
-            expiry_date=dict(type='str'),
-            user_type_name=dict(type='str'),
-            disabled=dict(type='bool'),
-            location=dict(type='str'),
-            group_name=dict(type='str'),
-        ),
+            username=dict(type="str", required=True),
+            state=dict(type="str", default="present", choices=["absent", "present"]),
+            logging_level=dict(
+                type="str", default="NOTSET", choices=["NOTSET", "DEBUG", "INFO"]
+            ),
+            logging_file=dict(type="str", default="/tmp/ansible_cyberark.log"),
+            cyberark_session=dict(type="dict", required=True),
+            initial_password=dict(type="str", no_log=True),
+            new_password=dict(type="str", no_log=True),
+            email=dict(type="str"),
+            first_name=dict(type="str"),
+            last_name=dict(type="str"),
+            change_password_on_the_next_logon=dict(type="bool"),
+            expiry_date=dict(type="str"),
+            user_type_name=dict(type="str"),
+            disabled=dict(type="bool"),
+            location=dict(type="str"),
+            group_name=dict(type="str"),
+        )
     )
 
     if module.params["logging_level"] is not None:
-        logging.basicConfig(filename=module.params["logging_file"], level=module.params["logging_level"])
-    
+        logging.basicConfig(
+            filename=module.params["logging_file"], level=module.params["logging_level"]
+        )
+
     logging.info("Starting Module")
 
-    state = module.params['state']
-    group_name = module.params['group_name']
+    state = module.params["state"]
+    group_name = module.params["group_name"]
 
-    if (state == "present"):
+    if state == "present":
         (changed, result, status_code) = user_details(module)
 
-        if (status_code == 200):
+        if status_code == 200:
             # User already exists
 
-            (changed, result, status_code) = user_add_or_update(module, "PUT", result["result"])
+            (changed, result, status_code) = user_add_or_update(
+                module, "PUT", result["result"]
+            )
 
-            if (group_name is not None):
+            if group_name is not None:
                 # If user exists, add to group if needed
-                (changed_group, ignored_result, ignored_status_code) = user_add_to_group(module)
+                (
+                    changed_group,
+                    ignored_result,
+                    ignored_status_code,
+                ) = user_add_to_group(module)
                 changed = changed or changed_group
 
-        elif (status_code == 404):
+        elif status_code == 404:
             # User does not exist, proceed to create it
             (changed, result, status_code) = user_add_or_update(module, "POST", None)
 
-            if (status_code == 201 and group_name is not None):
+            if status_code == 201 and group_name is not None:
                 # If user was created, add to group if needed
-                (changed, ignored_result, ignored_status_code) = user_add_to_group(module)
+                (changed, ignored_result, ignored_status_code) = user_add_to_group(
+                    module
+                )
 
-    elif (state == "absent"):
+    elif state == "absent":
         (changed, result, status_code) = user_delete(module)
 
-    module.exit_json(
-        changed=changed,
-        cyberark_user=result,
-        status_code=status_code)
+    module.exit_json(changed=changed, cyberark_user=result, status_code=status_code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
