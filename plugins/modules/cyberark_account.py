@@ -1349,7 +1349,7 @@ def main():
             "secret_management" in module.params.keys()
             and "perform_management_action" in module.params[
                 "secret_management"
-                ].keys()
+            ].keys()
         ):
             perform_management_action = module.params["secret_management"][
                 "perform_management_action"

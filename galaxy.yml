@@ -1,6 +1,6 @@
 namespace: "cyberark"
 name: "bizdev"
-version: "1.0.8"
+version: "1.0.9"
 readme: README.md
 authors:
     - CyberArk Business Development (@cyberark-bizdev)
