@@ -1,11 +1,9 @@
 <!-- please note this has to be a absolute URL since otherwise it will not show up on galaxy.ansible.com -->
 ![cyberark logo|](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/full-cyberark-logo.jpg?raw=true)
 
-
 ## CyberArk Ansible Security Automation Collection
 
 *************
-<br>
 
 ## Collection
 
