@@ -2,9 +2,19 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2017, Ansible Project
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+import json
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_text
+from ansible.module_utils.six.moves import http_client as httplib
+from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module_utils.urls import open_url
+import logging
+
 
 __metaclass__ = type
 
@@ -17,32 +27,38 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: cyberark_user
-short_description: Module for CyberArk User Management using PAS Web Services SDK
+short_description:
+    - Module for CyberArk User Management using PAS Web Services SDK
 author:
   - Edward Nunez (@enunez-cyberark) CyberArk BizDev
   - Cyberark Bizdev (@cyberark-bizdev)
   - erasmix (@erasmix)
 version_added: 2.4
 description:
-    - CyberArk User Management using PAS Web Services SDK.
-    - It currently supports the following actions Get User Details, Add User, Update User, Delete User.
+    - CyberArk User Management using PAS Web Services SDK,
+      It currently supports the following actions Get User Details, Add User,
+      Update User, Delete User.
 
 options:
     username:
         description:
-            - The name of the user who will be queried (for details), added, updated or deleted.
+            - The name of the user who will be queried (for details), added,
+              updated or deleted.
         type: str
         required: True
     state:
         description:
-            - Specifies the state needed for the user present for create user, absent for delete user.
+            - Specifies the state needed for the user present for create user,
+              absent for delete user.
         type: str
         choices: [ absent, present ]
         default: present
     cyberark_session:
         description:
-            - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session,
-              please see M(cyberark_authentication) module for an example of cyberark_session.
+            - Dictionary set by a CyberArk authentication containing the
+              different values to perform actions on a logged-on CyberArk
+              session, please see M(cyberark_authentication) module for an
+              example of cyberark_session.
         type: dict
         required: True
     initial_password:
@@ -53,7 +69,8 @@ options:
         type: str
     new_password:
         description:
-            - The user updated password. Make sure that this password meets the password policy requirements.
+            - The user updated password. Make sure that this password meets
+              the password policy requirements.
         type: str
     email:
         description:
@@ -69,12 +86,14 @@ options:
         type: str
     change_password_on_the_next_logon:
         description:
-            - Whether or not the user must change their password in their next logon.
+            - Whether or not the user must change their password in their
+              next logon.
         type: bool
         default: no
     expiry_date:
         description:
-            - The date and time when the user account will expire and become disabled.
+            - The date and time when the user account will expire and become
+              disabled.
         type: str
     user_type_name:
         description:
@@ -147,17 +166,6 @@ status_code:
     sample: 200
 """
 
-import json
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_text
-from ansible.module_utils.six.moves import http_client as httplib
-from ansible.module_utils.six.moves.urllib.error import HTTPError
-from ansible.module_utils.urls import open_url
-
-import sys
-import logging
-
 
 def user_details(module):
 
@@ -170,7 +178,9 @@ def user_details(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(
+        username
+    )
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
 
@@ -246,13 +256,19 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         end_point = end_point.format(username)
 
     # --- Optionally populate payload based on parameters passed ---
-    if "new_password" in module.params and module.params["new_password"] is not None:
+    if (
+        "new_password" in module.params
+        and module.params["new_password"] is not None
+    ):
         payload["NewPassword"] = module.params["new_password"]
 
     if "email" in module.params and module.params["email"] is not None:
         payload["Email"] = module.params["email"]
 
-    if "first_name" in module.params and module.params["first_name"] is not None:
+    if (
+        "first_name" in module.params
+        and module.params["first_name"] is not None
+    ):
         payload["FirstName"] = module.params["first_name"]
 
     if "last_name" in module.params and module.params["last_name"] is not None:
@@ -266,7 +282,10 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             "change_password_on_the_next_logon"
         ]
 
-    if "expiry_date" in module.params and module.params["expiry_date"] is not None:
+    if (
+        "expiry_date" in module.params
+        and module.params["expiry_date"] is not None
+    ):
         payload["ExpiryDate"] = module.params["expiry_date"]
 
     if (
@@ -283,13 +302,17 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     # --------------------------------------------------------------
     logging.debug(
-        "HTTPMethod = " + HTTPMethod + "module.params = " + json.dumps(module.params)
+        "HTTPMethod = "
+        + HTTPMethod
+        + " module.params = "
+        + json.dumps(module.params)
     )
     logging.debug("Existing Info: " + json.dumps(existing_info))
     logging.debug("payload => " + json.dumps(payload))
 
     if HTTPMethod == "PUT" and (
-        not "new_password" in module.params or module.params["new_password"] is None
+        "new_password" not in module.params
+        or module.params["new_password"] is None
     ):
         logging.info("Verifying if needs to be updated")
         proceed = False
@@ -372,7 +395,9 @@ def user_delete(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+    end_point = (
+        "/PasswordVault/WebServices/PIMServices.svc/Users/{0}"
+    ).format(username)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -435,7 +460,9 @@ def user_add_to_group(module):
 
     # Prepare result, end_point, headers and payload
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc//Groups/{0}/Users".format(
+    end_point = (
+        "/PasswordVault/WebServices/PIMServices.svc//Groups/{0}/Users"
+    ).format(
         group_name
     )
 
@@ -496,9 +523,15 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             username=dict(type="str", required=True),
-            state=dict(type="str", default="present", choices=["absent", "present"]),
+            state=dict(
+                type="str",
+                default="present",
+                choices=["absent", "present"]
+            ),
             logging_level=dict(
-                type="str", default="NOTSET", choices=["NOTSET", "DEBUG", "INFO"]
+                type="str",
+                default="NOTSET",
+                choices=["NOTSET", "DEBUG", "INFO"]
             ),
             logging_file=dict(type="str", default="/tmp/ansible_cyberark.log"),
             cyberark_session=dict(type="dict", required=True),
@@ -518,7 +551,8 @@ def main():
 
     if module.params["logging_level"] is not None:
         logging.basicConfig(
-            filename=module.params["logging_file"], level=module.params["logging_level"]
+            filename=module.params["logging_file"],
+            level=module.params["logging_level"]
         )
 
     logging.info("Starting Module")
@@ -538,27 +572,29 @@ def main():
 
             if group_name is not None:
                 # If user exists, add to group if needed
-                (
-                    changed_group,
-                    ignored_result,
-                    ignored_status_code,
-                ) = user_add_to_group(module)
+                (changed_group, _, _) = user_add_to_group(module)
                 changed = changed or changed_group
 
         elif status_code == 404:
             # User does not exist, proceed to create it
-            (changed, result, status_code) = user_add_or_update(module, "POST", None)
+            (changed, result, status_code) = user_add_or_update(
+                module,
+                "POST",
+                None
+            )
 
             if status_code == 201 and group_name is not None:
                 # If user was created, add to group if needed
-                (changed, ignored_result, ignored_status_code) = user_add_to_group(
-                    module
-                )
+                (changed, _, _) = user_add_to_group(module)
 
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)
 
-    module.exit_json(changed=changed, cyberark_user=result, status_code=status_code)
+    module.exit_json(
+        changed=changed,
+        cyberark_user=result,
+        status_code=status_code
+    )
 
 
 if __name__ == "__main__":

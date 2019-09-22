@@ -1,8 +1,22 @@
 #!/usr/bin/python
 # Copyright: (c) 2017, Ansible Project
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# GNU General Public License v3.0+
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+from ansible.module_utils._text import to_text
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import open_url
+from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module.utils.six.moves.urllib.parse import quote
+import json
+try:
+    import httplib
+except ImportError:
+    # Python 3
+    import http.client as httplib
+import logging
+
 
 __metaclass__ = type
 
@@ -15,60 +29,77 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: cyberark_account
-short_description: Module for CyberArk Account object creation, deletion, and modification using PAS Web Services SDK
-author: CyberArk BizDev Tech (@enunez-cyberark, @cyberark-bizdev, @jimmyjamcabd)
+short_description:
+    - Module for CyberArk Account object creation, deletion, and modification
+      using PAS Web Services SDK.
+author:
+    - CyberArk BizDev Tech (@enunez-cyberark, @cyberark-bizdev, @jimmyjamcabd)
 version_added: 2.4
 description:
-    - Creates a URI for adding, deleting, modifying a privileged credential within the Cyberark Vault.  The request uses the Privileged 
-      Account Security Web Services SDK.
+    - Creates a URI for adding, deleting, modifying a privileged credential
+      within the Cyberark Vault.  The request uses the Privileged Account
+      Security Web Services SDK.
 
 
 options:
     state:
         description:
-            - Assert the desired state of the account C(present) to creat or update and account object. Set to C(absent) for deletion of an account object
+            - Assert the desired state of the account C(present) to creat or
+              update and account object. Set to C(absent) for deletion of an
+              account object.
         required: true
         default: present
         choices: [present, absent]
         type: str
     logging_level:
         description:
-            - Parameter used to define the level of troubleshooting output to the C(logging_file) value
+            - Parameter used to define the level of troubleshooting output to
+              the C(logging_file) value.
         required: true
         choices: [NOTSET, DEBUG, INFO]
         type: str
     logging_file:
         description:
-            - Setting the log file name and location for troubleshooting logs
+            - Setting the log file name and location for troubleshooting logs.
         required: false
         default: /tmp/ansible_cyberark.log
         type: str
     api_base_url:
         description:
-            - A string containing the base URL of the server hosting CyberArk's Privileged Account Security Web Services SDK
+            - A string containing the base URL of the server hosting CyberArk's
+              Privileged Account Security Web Services SDK.
             - Example: U(https://<IIS_Server_Ip>/PasswordVault/api/)
         required: true
         type: str
     validate_certs:
         description:
-            - If C(false), SSL certificate chain will not be validated.  This should only set to C(true) if you have a root CA certificate installed on each node.
+            - If C(false), SSL certificate chain will not be validated.  This
+              should only set to C(true) if you have a root CA certificate
+              installed on each node.
         required: false
         default: true
         type: bool
     cyberark_session:
         description:
-            - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session, please see M(cyberark_authentication) module for an example of cyberark_session.
+            - Dictionary set by a CyberArk authentication containing the
+              different values to perform actions on a logged-on CyberArk
+              session, please see M(cyberark_authentication) module for an
+              example of cyberark_session.
         required: true
         type: dict
-    identified_by: 
+    identified_by:
         description:
-            - When an API call is made to Get Accounts, often times the default parameters passed will identify more than one account. This parameter is used to confidently identify a single account when the default query can return multiple results.
+            - When an API call is made to Get Accounts, often times the default
+              parameters passed will identify more than one account. This
+              parameter is used to confidently identify a single account when
+              the default query can return multiple results.
         required: false
         default: username,address,platform_id
-        type: str        
+        type: str
     safe:
         description:
-            - The safe in the Vault where the privileged account is to be located
+            - The safe in the Vault where the privileged account is to be
+              located.
         required: true
         type: str
     platform_id:
@@ -78,7 +109,8 @@ options:
         type: str
     address:
         description:
-            - The address of the endpoint where the privileged account is located
+            - The address of the endpoint where the privileged account is
+              located.
         required: false
         type: str
     name:
@@ -103,61 +135,77 @@ options:
             - The username associated with the account
         required: false
         type: str
-    secret_management
+    secret_management:
         description:
-            - Set of parameters associated with the management of the credential
+            - Set of parameters associated with the management of the
+              credential.
         required: false
-            suboptions:
-                automatic_management_enabled:
-                    description:
-                        - Parameter that indicates whether the CPM will manage the password or not
-                    default: True
-                    type: bool
-                manual_management_reason:
-                    description:
-                        - String value indicating why the CPM will NOT manage the password
-                    type: str
-                management_action:
-                    description:
-                        - CPM action flag to be placed on the account object for credential rotation
-                    choices: [change, change_immediately, reconcile]
-                    type: str
-                new_secret:
-                    description:
-                        - The actual password value that will be assigned for the CPM action to be taken
-                    type: str
-                perform_management_action:
-                    description:
-                        - C(always) will perform the management action in every action
-                        - C(on_create) will only perform the management action right after the account is created
-                    choices: [always, on_create]
-                    default: always
-                    type: str
+        type: dict
+        suboptions:
+            automatic_management_enabled:
+                description:
+                    - Parameter that indicates whether the CPM will manage
+                        the password or not.
+                default: True
+                type: bool
+            manual_management_reason:
+                description:
+                    - String value indicating why the CPM will NOT manage
+                        the password.
+                type: str
+            management_action:
+                description:
+                    - CPM action flag to be placed on the account object
+                        for credential rotation.
+                choices: [change, change_immediately, reconcile]
+                type: str
+            new_secret:
+                description:
+                    - The actual password value that will be assigned for
+                        the CPM action to be taken.
+                type: str
+            perform_management_action:
+                description:
+                    - C(always) will perform the management action in
+                        every action.
+                    - C(on_create) will only perform the management action
+                        right after the account is created.
+                choices: [always, on_create]
+                default: always
+                type: str
     remote_machines_access:
         description:
             - Set of parameters for defining PSM endpoint access targets
         required: false
         type: dict
-            suboptions:
-                remote_machines:
-                    description:
-                        - List of targets allowed for this account 
-                    type: str
-                access_restricted_to_remote_machines:
-                    description:
-                        - Whether or not to restrict access only to specified remote machines
-                    type: bool
+        suboptions:
+            remote_machines:
+                description:
+                    - List of targets allowed for this account.
+                type: str
+            access_restricted_to_remote_machines:
+                description:
+                    - Whether or not to restrict access only to specified
+                        remote machines.
+                type: bool
     platform_account_properties:
         description:
-            - Object containing key-value pairs to associate with the account, as defined by the account platform. These properties are validated against the mandatory and optional properties of the specified platform's definition. Optional properties that do not exist on the account will not be returned here. Internal properties are not returned.
+            - Object containing key-value pairs to associate with the account,
+              as defined by the account platform. These properties are
+              validated against the mandatory and optional properties of the
+              specified platform's definition. Optional properties that do not
+              exist on the account will not be returned here. Internal
+              properties are not returned.
         required: false
         type: dict
-            suboptions:
-                KEY:
-                    description:
-                        - Freeform key value associated to the mandatory or optional property assigned to the specified Platform's definition.
-                    aliases: [Port, ExtrPass1Name, database]
-                    type: str
+        suboptions:
+            KEY:
+                description:
+                    - Freeform key value associated to the mandatory or
+                        optional property assigned to the specified
+                        Platform's definition.
+                aliases: [Port, ExtrPass1Name, database]
+                type: str
 """
 
 EXAMPLES = """
@@ -190,8 +238,10 @@ EXAMPLES = """
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-    
-    - name: Rotate credential via reconcile and providing the password to be changed to
+
+    - name:
+        - Rotate credential via reconcile and providing the password to
+          bechanged to.
       cyberark_account:
         identified_by: "address,username"
         safe: "Domain_Admins"
@@ -216,7 +266,9 @@ EXAMPLES = """
 """
 RETURN = """
 changed:
-    description: Identify if the playbook run resulted in a change to the account in any way
+    description:
+        - Identify if the playbook run resulted in a change to the account in
+          any way.
     returned: always
     type: bool
 failed:
@@ -234,12 +286,14 @@ result:
     type: complex
     sample:
         address:
-            description: The adress of the endpoint where the privileged account is located
+            description:
+                - The adress of the endpoint where the privileged account is
+                  located.
             returned: successful addition and modification
             type: str
             sample: dev.local
         createdTime: Timeframe calculation of the timestamp of account creation
-            description: 
+            description:
             returned: successful addition and modification
             type: int
             sample: "1567824520"
@@ -252,50 +306,64 @@ result:
             description: The external ObjectID of the account
             returned: successful addition and modification
             type: str
-            sample: Operating System-WinServerLocal-cyberark.local-administrator
+            sample:
+                - Operating System-WinServerLocal-cyberark.local-administrator
         platformAccountProperties:
-            description: Object containing key-value pairs to associate with the account, as defined by the account platform.
+            description:
+                - Object containing key-value pairs to associate with the
+                  account, as defined by the account platform.
             returned: successful addition and modification
             type: complex
             sample:
                 "KEY": "VALUE"
-                    description: 
+                    description:
                     returned: successful addition and modification
                     type: str
                     sample:
                         - "LogonDomain": "cyberark"
                         - "Port": "22"
         platformId:
-            description: The PolicyID of the Platform that is to be managing the account
+            description:
+                - The PolicyID of the Platform that is to be managing the
+                  account.
             returned: successful addition and modification
             type: str
             sample: WinServerLocal
         safeName:
-            description: The safe in the Vault where the privileged account is to be located
+            description:
+                - The safe in the Vault where the privileged account is to
+                  be located.
             returned: successful addition and modification
             type: str
             sample: Domain_Admins
         secretManagement
-            description: Set of parameters associated with the management of the credential
+            description:
+                - Set of parameters associated with the management of
+                  the credential.
             returned: successful addition and modification
             type: complex
             sample:
                 automaticManagementEnabled
-                    description: Parameter that indicates whether the CPM will manage the password or not
+                    description:
+                        - Parameter that indicates whether the CPM will manage
+                          the password or not.
                     returned: successful addition and modification
                     type: bool
                 lastModifiedTime:
-                    description: Timeframe calculation of the timestamp of account modification
+                    description:
+                        - Timeframe calculation of the timestamp of account
+                          modification.
                     returned: successful addition and modification
                     type: int
                     sample: "1567824520"
                 manualManagementReason:
-                    description: 
+                    description:
                     returned: if C(automaticManagementEnabled) is set to false
                     type: str
                     sample: This is a static account
         secretType:
-            description: The value that identifies what type of account it will be
+            description:
+                - The value that identifies what type of account it will be
             returned: successful addition and modification
             type: list
             sample:
@@ -307,22 +375,6 @@ result:
             type: str
             sample: administrator
 """
-
-from ansible.module_utils._text import to_text
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.urls import open_url
-from ansible.module_utils.six.moves.urllib.error import HTTPError
-from ansible.module.utils.six.moves.urllib.parse import quote
-import json
-import urllib
-
-try:
-    import httplib
-except ImportError:
-    # Python 3
-    import http.client as httplib
-import sys
-import logging
 
 _empty = object()
 
@@ -422,10 +474,14 @@ def update_account(module, existing_account):
         ):
             module_parm_value = module.params[parameter_name]
             cyberark_property_name = referenced_value(
-                parameter_name, cyberark_reference_fieldnames, default=parameter_name
+                parameter_name,
+                cyberark_reference_fieldnames,
+                default=parameter_name
             )
             existing_account_value = referenced_value(
-                cyberark_property_name, existing_account, keys=existing_account.keys()
+                cyberark_property_name,
+                existing_account,
+                keys=existing_account.keys()
             )
             if cyberark_property_name not in cyberark_fixed_properties:
                 if module_parm_value is not None and isinstance(
@@ -436,12 +492,15 @@ def update_account(module, existing_account):
                     adding = {}
                     removing = {}
                     for child_parm_name in module_parm_value.keys():
-                        nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
+                        nested_parm_name = "%s.%s" % (
+                            parameter_name,
+                            child_parm_name)
                         if (
                             nested_parm_name not in ansible_specific_parameters
-                        ):  # and deep_get(module.params, nested_parm_name, "NOT_FOUND", False):
-                            #                             logging.debug("Existing Account Value: %s  cyberark_property_name=%s existing_account:%s" % (existing_account_value, cyberark_property_name, existing_account))
-                            child_module_parm_value = module_parm_value[child_parm_name]
+                        ):
+                            child_module_parm_value = module_parm_value[
+                                child_parm_name
+                            ]
                             child_cyberark_property_name = referenced_value(
                                 child_parm_name,
                                 cyberark_reference_fieldnames,
@@ -460,7 +519,8 @@ def update_account(module, existing_account):
                             )
                             if child_existing_account_value is not None:
                                 logging.debug(
-                                    "child_module_parm_value: %s  child_existing_account_value=%s  path=%s"
+                                    ("child_module_parm_value: %s "
+                                     "child_existing_account_value=%s path=%s")
                                     % (
                                         child_module_parm_value,
                                         child_existing_account_value,
@@ -468,10 +528,10 @@ def update_account(module, existing_account):
                                     )
                                 )
                                 if child_module_parm_value == removal_value:
-                                    #                                     payload["Operations"].append({"op": "remove", "path": path_value})
                                     removing.update(
                                         {
-                                            child_cyberark_property_name: child_existing_account_value
+                                            child_cyberark_property_name:
+                                            child_existing_account_value
                                         }
                                     )
                                 elif (
@@ -484,10 +544,10 @@ def update_account(module, existing_account):
                                     # Updating a property
                                     replacing.update(
                                         {
-                                            child_cyberark_property_name: child_module_parm_value
+                                            child_cyberark_property_name:
+                                            child_module_parm_value
                                         }
                                     )
-                            #                                     payload["Operations"].append({"op": "replace", "value": child_module_parm_value, "path": path_value})
                             elif (
                                 child_module_parm_value is not None
                                 and child_module_parm_value != removal_value
@@ -495,10 +555,10 @@ def update_account(module, existing_account):
                                 # Adding a property value
                                 adding.update(
                                     {
-                                        child_cyberark_property_name: child_module_parm_value
+                                        child_cyberark_property_name:
+                                        child_module_parm_value
                                     }
                                 )
-                            #                                 payload["Operations"].append({"op": "add", "value": child_module_parm_value, "path": path_value})
                             logging.debug(
                                 "parameter_name=%s  value=%s existing=%s"
                                 % (
@@ -536,9 +596,13 @@ def update_account(module, existing_account):
                     if existing_account_value is not None:
                         if module_parm_value == removal_value:
                             payload["Operations"].append(
-                                {"op": "remove", "path": "/%s" % cyberark_property_name}
+                                {"op": "remove", "path": "/%s" %
+                                    cyberark_property_name}
                             )
-                        elif not equal_value(existing_account_value, module_parm_value):
+                        elif not equal_value(
+                            existing_account_value,
+                            module_parm_value
+                        ):
                             # Updating a property
                             payload["Operations"].append(
                                 {
@@ -558,7 +622,10 @@ def update_account(module, existing_account):
                         )
                     logging.debug(
                         "parameter_name=%s  value=%s existing=%s"
-                        % (parameter_name, module_parm_value, existing_account_value)
+                        % (
+                            parameter_name, module_parm_value,
+                            existing_account_value
+                        )
                     )
 
     if len(payload["Operations"]) != 0:
@@ -618,7 +685,10 @@ def update_account(module, existing_account):
                         msg=(
                             "Unknown error while performing update_account."
                             "\n*** end_point=%s%s\n%s"
-                            % (api_base_url, end_point, to_text(unknown_exception))
+                            % (
+                                api_base_url, end_point,
+                                to_text(unknown_exception)
+                            )
                         ),
                         payload=individual_payload,
                         headers=headers,
@@ -654,16 +724,21 @@ def add_account(module):
             and module.params[parameter_name] is not None
         ):
             cyberark_property_name = referenced_value(
-                parameter_name, cyberark_reference_fieldnames, default=parameter_name
+                parameter_name,
+                cyberark_reference_fieldnames,
+                default=parameter_name
             )
             if isinstance(module.params[parameter_name], dict):
                 payload[cyberark_property_name] = {}
                 for dict_key in module.params[parameter_name].keys():
                     cyberark_child_property_name = referenced_value(
-                        dict_key, cyberark_reference_fieldnames, default=dict_key
+                        dict_key,
+                        cyberark_reference_fieldnames,
+                        default=dict_key
                     )
                     logging.debug(
-                        "parameter_name =%s.%s cyberark_property_name=%s cyberark_child_property_name=%s"
+                        ("parameter_name =%s.%s cyberark_property_name=%s "
+                         "cyberark_child_property_name=%s")
                         % (
                             parameter_name,
                             dict_key,
@@ -679,7 +754,10 @@ def add_account(module):
                         payload[cyberark_property_name][
                             cyberark_child_property_name
                         ] = deep_get(
-                            module.params[parameter_name], dict_key, _empty, False
+                            module.params[parameter_name],
+                            dict_key,
+                            _empty,
+                            False
                         )
             else:
                 if parameter_name not in cyberark_reference_fieldnames:
@@ -738,7 +816,11 @@ def add_account(module):
             msg=(
                 "Error while performing add_account."
                 "Please validate parameters provided."
-                "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+                "\n*** end_point=%s%s\n ==> %s" % (
+                    api_base_url,
+                    end_point,
+                    res
+                )
             ),
             payload=payload,
             headers=headers,
@@ -805,7 +887,11 @@ def delete_account(module, existing_account):
                 msg=(
                     "Error while performing delete_account."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+                    "\n*** end_point=%s%s\n ==> %s" % (
+                        api_base_url,
+                        end_point,
+                        res
+                    )
                 ),
                 headers=headers,
                 status_code=http_exception.code,
@@ -832,7 +918,10 @@ def reset_account_if_needed(module, existing_account):
 
     # Credential changes
     management_action = deep_get(
-        module.params, "secret_management.management_action", "NOT_FOUND", False
+        module.params,
+        "secret_management.management_action",
+        "NOT_FOUND",
+        False
     )
     cpm_new_secret = deep_get(
         module.params, "secret_management.new_secret", "NOT_FOUND", False
@@ -859,35 +948,40 @@ def reset_account_if_needed(module, existing_account):
     ):
         logging.debug("CPM change secret for next CPM cycle")
         end_point = (
-            "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account_id
-        )
+            "/PasswordVault/API/Accounts/%s/SetNextPassword"
+        ) % existing_account_id
         payload["ChangeImmediately"] = False
         payload["NewCredentials"] = cpm_new_secret
     elif management_action == "change_immediately" and (
         cpm_new_secret == "NOT_FOUND" or cpm_new_secret is None
     ):
         logging.debug("CPM change_immediately with random secret")
-        end_point = "/PasswordVault/API/Accounts/%s/Change" % existing_account_id
+        end_point = (
+            "/PasswordVault/API/Accounts/%s/Change"
+        ) % existing_account_id
         payload["ChangeEntireGroup"] = True
     elif management_action == "change_immediately" and (
         cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND"
     ):
         logging.debug("CPM change immediately secret for next CPM cycle")
         end_point = (
-            "/PasswordVault/API/Accounts/%s/SetNextPassword" % existing_account_id
-        )
+            "/PasswordVault/API/Accounts/%s/SetNextPassword"
+        ) % existing_account_id
         payload["ChangeImmediately"] = True
         payload["NewCredentials"] = cpm_new_secret
     elif management_action == "reconcile":
         logging.debug("CPM reconcile secret")
-        end_point = "/PasswordVault/API/Accounts/%s/Reconcile" % existing_account_id
+        end_point = (
+            "/PasswordVault/API/Accounts/%s/Reconcile"
+        ) % existing_account_id
     elif (
-        "new_secret" in module.params.keys() and module.params["new_secret"] is not None
+        "new_secret" in module.params.keys()
+        and module.params["new_secret"] is not None
     ):
         logging.debug("Change Credential in Vault")
         end_point = (
-            "/PasswordVault/API/Accounts/%s/Password/Update" % existing_account_id
-        )
+            "/PasswordVault/API/Accounts/%s/Password/Update"
+        ) % existing_account_id
         payload["ChangeEntireGroup"] = True
         payload["NewCredentials"] = module.params["new_secret"]
 
@@ -928,8 +1022,8 @@ def reset_account_if_needed(module, existing_account):
                     msg=(
                         "Error while performing reset_account."
                         "Please validate parameters provided."
-                        "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
-                    ),
+                        "\n*** end_point=%s%s\n ==> %s"
+                    ) % (api_base_url, end_point, res),
                     headers=headers,
                     payload=payload,
                     status_code=http_exception.code,
@@ -953,7 +1047,9 @@ def reset_account_if_needed(module, existing_account):
 
 
 def referenced_value(field, dct, keys=None, default=None):
-    return dct[field] if field in (keys if keys is not None else dct) else default
+    return dct[field] if field in (
+        keys if keys is not None else dct
+    ) else default
 
 
 def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
@@ -1022,7 +1118,9 @@ def get_account(module):
             quote(search_string.lstrip()),
         )
     elif search_string is not None:
-        end_point = "/PasswordVault/api/accounts?search=%s" % (search_string.lstrip())
+        end_point = (
+            "/PasswordVault/api/accounts?search=%s"
+        ) % (search_string.lstrip())
     else:
         end_point = "/PasswordVault/api/accounts?filter=%s" % (safe_filter)
 
@@ -1052,13 +1150,21 @@ def get_account(module):
             how_many = 0
             first_record_found = None
             for account_record in accounts_data["value"]:
-                logging.debug("Account Record => " + json.dumps(account_record))
+                logging.debug(
+                    "Account Record => " + json.dumps(account_record)
+                )
                 found = False
                 for field in identified_by_fields:
-                    #                     record_field_name = cyberark_reference_fieldnames[field] if field in cyberark_reference_fieldnames else field
-                    record_field_value = deep_get(account_record, field, "NOT FOUND")
+                    record_field_value = deep_get(
+                        account_record,
+                        field,
+                        "NOT FOUND"
+                    )
                     logging.debug(
-                        "Comparing field %s  | record_field_name=%s  record_field_value=%s   module.params_value=%s"
+                        (
+                            "Comparing field %s | record_field_name=%s  "
+                            "record_field_value=%s   module.params_value=%s"
+                        )
                         % (
                             field,
                             field,
@@ -1068,8 +1174,15 @@ def get_account(module):
                     )
                     if (
                         record_field_value != "NOT FOUND"
-                        and record_field_value
-                        == deep_get(module.params, field, "NOT FOUND", False)
+                        and (
+                            record_field_value
+                            == deep_get(
+                                module.params,
+                                field,
+                                "NOT FOUND",
+                                False
+                            )
+                        )
                     ):
                         found = True
                     else:
@@ -1086,8 +1199,10 @@ def get_account(module):
             )
             if how_many > 1:  # too many records found
                 module.fail_json(
-                    msg="Error while performing get_account. Too many rows (%d) found matching your criteria!"
-                    % how_many
+                    msg=(
+                        "Error while performing get_account. "
+                        "Too many rows (%d) found matching your criteria!"
+                    ) % how_many
                 )
             else:
                 return (how_many == 1, first_record_found, response.getcode())
@@ -1129,8 +1244,14 @@ def main():
             "choices": ["present", "absent"],
             "default": "present",
         },
-        "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
-        "logging_file": {"type": "str", "default": "/tmp/ansible_cyberark.log"},
+        "logging_level": {
+            "type": "str",
+            "choices": ["NOTSET", "DEBUG", "INFO"]
+        },
+        "logging_file": {
+            "type": "str",
+            "default": "/tmp/ansible_cyberark.log"
+        },
         "api_base_url": {"type": "str"},
         "validate_certs": {"type": "bool", "default": "true"},
         "cyberark_session": {"required": True, "type": "dict", "no_log": True},
@@ -1185,7 +1306,8 @@ def main():
 
     if module.params["logging_level"] is not None:
         logging.basicConfig(
-            filename=module.params["logging_file"], level=module.params["logging_level"]
+            filename=module.params["logging_file"],
+            level=module.params["logging_level"]
         )
 
     logging.info("Starting Module")
@@ -1203,9 +1325,12 @@ def main():
 
     if state == "present":
 
-        if found:  # Account already exists, let's verify if we need to update it
-            (changed, result, status_code) = update_account(module, account_record)
-        else:  # Account does not exist, and we need to create it
+        if found:  # Account already exists
+            (changed, result, status_code) = update_account(
+                module,
+                account_record
+            )
+        else:  # Account does not exist
             (changed, result, status_code) = add_account(module)
 
         perform_management_action = None
@@ -1218,7 +1343,10 @@ def main():
         if perform_management_action == "always" or (
             perform_management_action == "on_create" and not found
         ):
-            (account_reset, _, _) = reset_account_if_needed(module, result["result"])
+            (account_reset, _, _) = reset_account_if_needed(
+                module,
+                result["result"]
+            )
             if account_reset:
                 changed = True
 
