@@ -1095,6 +1095,7 @@ def get_account(module):
     logging.debug("Identified_by: " + json.dumps(identified_by_fields))
     safe_filter = (
         quote("safeName eq ") + quote(module.params["safe"])
+        urllib.quote("safeName eq ") + urllib.quote(module.params["safe"])
         if "safe" in module.params and module.params["safe"] is not None
         else None
     )
@@ -1118,6 +1119,7 @@ def get_account(module):
         end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (
             safe_filter,
             quote(search_string.lstrip()),
+            urllib.quote(search_string.lstrip()),
         )
     elif search_string is not None:
         end_point = (
@@ -1335,15 +1337,33 @@ def main():
         else:  # Account does not exist
             (changed, result, status_code) = add_account(module)
 
-        perform_management_action = None
+        perform_management_action = "always"
         if "secret_management" in module.params.keys():
+            secret_management = module.params["secret_management"]
+            if (
+                secret_management is not None
+                and "perform_management_action" in secret_management.keys()
+            ):
+                perform_management_action = secret_management[
+                    "perform_management_action"
+                ]
+
+        if (
+            "secret_management" in module.params.keys()
+            and "perform_management_action" in module.params[
+                "secret_management"
+                ].keys()
+        ):
             perform_management_action = module.params["secret_management"][
                 "perform_management_action"
             ]
 
         logging.debug("Result=>%s" % json.dumps(result))
-        if perform_management_action == "always" or (
-            perform_management_action == "on_create" and not found
+        if (
+            perform_management_action == "always"
+            or (
+                perform_management_action == "on_create" and not found
+            )
         ):
             (account_reset, _, _) = reset_account_if_needed(
                 module,
