@@ -8,8 +8,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
-#from ansible.module.utils.six.moves.urllib.parse import quote
-from ansible.compat.six.moves.urllib.parse import quote  # pylint:disable=no-name-in-module,import-error
+from ansible.compat.six.moves.urllib.parse import quote
 
 
 import json
