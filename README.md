@@ -1,5 +1,5 @@
 <!-- please note this has to be a absolute URL since otherwise it will not show up on galaxy.ansible.com -->
-![cyberark logo|](./docs/images/full-cyberark-logo.jpg)
+![cyberark logo|](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/full-cyberark-logo.jpg)
 
 
 ## CyberArk Ansible Security Automation Collection
@@ -31,7 +31,7 @@ None.
 
 - Using the CyberArk Web Services SDK, authenticate and obtain an auth token to be passed as a variable in playbooks
 - Logoff of an authenticated REST API session<br>
-[Playbooks and Module Info](/docs/cyberark_authentication.md)
+[Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_authentication.md)
 
 #### cyberark_user
 
@@ -39,7 +39,7 @@ None.
 - Delete a CyberArk User
 - Update a CyberArk User's account parameters
     - Enable/Disable, change password, mark for change at next login, etc
-<br>[Playbooks and Module Info](/docs/cyberark_user.md)<br/>
+<br>[Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_user.md)<br/>
 
 #### cyberark_account
 
@@ -47,12 +47,12 @@ None.
 - Delete account objects
 - Modify account properties
 - Rotatate privileged credentials<br>
-[Playbooks and Module Info](/docs/cyberark_account.md)
+[Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_account.md)
 
 #### cyberark_credential
 
 - Using AAM Central Credential Provider (CCP), to securely retreive secrets and account properties from EPV to be registered for use in playbooks<br>
-[Playbooks and Module Info](/docs/cyberark_credential.md)
+[Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_credential.md)
 
 #### Author Information
 - CyberArk Business Development Technical Team 
