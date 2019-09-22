@@ -9,14 +9,14 @@ authors:
 description: "This is a Collection of the CyberArk Ansible Security Automation toolkit."
 license: "MIT"
 tags:
-  - CyberArk
-  - Access
-  - Security
-  - Account
-  - EPV
-  - Vault
-  - Identity
-  - Credential
-  - Secret
-  - Privileged
+  - cyberark
+  - access
+  - security
+  - account
+  - epv
+  - vault
+  - identity
+  - credential
+  - secret
+  - privileged
 repository: "https://github.com/cyberark/ansible-security-automation-collection"
