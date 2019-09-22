@@ -10,7 +10,6 @@ from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.compat.six.moves.urllib.parse import quote
 
-
 import json
 try:
     import httplib
@@ -1095,7 +1094,6 @@ def get_account(module):
     logging.debug("Identified_by: " + json.dumps(identified_by_fields))
     safe_filter = (
         quote("safeName eq ") + quote(module.params["safe"])
-        urllib.quote("safeName eq ") + urllib.quote(module.params["safe"])
         if "safe" in module.params and module.params["safe"] is not None
         else None
     )
@@ -1119,7 +1117,6 @@ def get_account(module):
         end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (
             safe_filter,
             quote(search_string.lstrip()),
-            urllib.quote(search_string.lstrip()),
         )
     elif search_string is not None:
         end_point = (
