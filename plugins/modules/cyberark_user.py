@@ -250,7 +250,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         end_point = "/PasswordVault/WebServices/PIMServices.svc/Users"
         payload["UserName"] = username
         if (
-            "initial_password" in module.params.keys() 
+            "initial_password" in module.params.keys()
             and module.params["initial_password"] is not None
         ):
             payload["InitialPassword"] = module.params["initial_password"]
