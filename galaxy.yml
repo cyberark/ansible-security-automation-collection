@@ -1,6 +1,6 @@
 namespace: "cyberark"
 name: "pas"
-version: "1.0.0"
+version: "1.0.0a"
 readme: README.md
 authors:
     - CyberArk Business Development (@cyberark-bizdev)
