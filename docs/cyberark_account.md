@@ -230,14 +230,14 @@ options:
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark.bizdev.cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
         validate_certs: no
         username: "bizdev"
         password: "Cyberark1"
 
     - name: Creating an Account using the PAS WebServices SDK
-      cyberark.bizdev.cyberark_account:
+      cyberark.pas.cyberark_account:
         logging_level: DEBUG
         identified_by: "address,username"
         safe: "Test"
@@ -255,7 +255,7 @@ options:
       register: cyberarkaction
     
     - name: Rotate credential via reconcile and providing the password to be changed to
-      cyberark.bizdev.cyberark_account:
+      cyberark.pas.cyberark_account:
         identified_by: "address,username"
         safe: "Domain_Admins"
         address: "prod.cyberark.local"
@@ -272,7 +272,7 @@ options:
       register: reconcileaccount
 
     - name: Logoff from CyberArk Vault
-      cyberark.bizdev.cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
 ```

@@ -2,7 +2,7 @@
 - hosts: localhost
 
   collections:
-    - cyberark.bizdev
+    - cyberark.pas
 
   tasks:
 

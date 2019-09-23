@@ -149,6 +149,7 @@ def processAuthentication(module):
         "use_shared_logon_authentication"
     ]
     use_radius = module.params["use_radius_authentication"]
+    connection_number = module.params["connection_number"]
     state = module.params["state"]
     cyberark_session = module.params["cyberark_session"]
 
@@ -182,6 +183,9 @@ def processAuthentication(module):
 
             if new_password is not None:
                 payload_dict["newPassword"] = new_password
+
+            if connection_number is not None:
+                payload_dict["connectionNumber"] = connection_number
 
             payload = json.dumps(payload_dict)
 
@@ -300,6 +304,7 @@ def main():
         "new_password": {"type": "str", "no_log": True},
         "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
+        "connection_number": {"type": "int", "choices": range(100)},
         "state": {
             "type": "str",
             "choices": ["present", "absent"],

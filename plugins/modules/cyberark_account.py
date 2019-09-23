@@ -211,7 +211,7 @@ options:
 
 EXAMPLES = """
   collections:
-    - cyberark.bizdev
+    - cyberark.pas
 
   tasks:
 

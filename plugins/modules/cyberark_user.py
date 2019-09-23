@@ -14,6 +14,7 @@ from ansible.module_utils.six.moves import http_client as httplib
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.urls import open_url
 import logging
+import urllib
 
 
 __metaclass__ = type
@@ -248,7 +249,10 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     if HTTPMethod == "POST":
         end_point = "/PasswordVault/WebServices/PIMServices.svc/Users"
         payload["UserName"] = username
-        if "initial_password" in module.params:
+        if (
+            "initial_password" in module.params.keys() 
+            and module.params["initial_password"] is not None
+        ):
             payload["InitialPassword"] = module.params["initial_password"]
 
     elif HTTPMethod == "PUT":
@@ -461,9 +465,9 @@ def user_add_to_group(module):
     # Prepare result, end_point, headers and payload
     result = {}
     end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc//Groups/{0}/Users"
+        "/PasswordVault/WebServices/PIMServices.svc/Groups/{0}/Users"
     ).format(
-        group_name
+        urllib.quote(group_name)
     )
 
     headers = {"Content-Type": "application/json"}
