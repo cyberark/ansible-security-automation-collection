@@ -3,13 +3,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
-from ansible.module_utils._text import to_text
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.urls import open_url
-from ansible.module_utils.six.moves.urllib.error import HTTPError
-import json
-
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -21,20 +14,17 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = '''
 ---
 module: cyberark_authentication
-short_description:
-    - Module for CyberArk Vault Authentication using PAS Web Services SDK.
+short_description: CyberArk Authentication using PAS Web Services SDK.
 author:
     - Edward Nunez (@enunez-cyberark) CyberArk BizDev
     - Cyberark Bizdev (@cyberark-bizdev)
-    - erasmix (@erasmix)
+    - Erasmo Acosta (@erasmix)
 version_added: 2.4
 description:
     - Authenticates to CyberArk Vault using Privileged Account Security
       Web Services SDK and creates a session fact that can be used by other
       modules. It returns an Ansible fact called I(cyberark_session). Every
       module can use this fact as C(cyberark_session) parameter.
-
-
 options:
     state:
         default: present
@@ -42,20 +32,25 @@ options:
         description:
             - Specifies if an authentication logon/logoff and a
               cyberark_session should be added/removed.
+        type: str
     username:
         description:
             - The name of the user who will logon to the Vault.
+        type: str
     password:
         description:
             - The password of the user.
+        type: str
     new_password:
         description:
             - The new password of the user. This parameter is optional,
               and enables you to change a password.
+        type: str
     api_base_url:
         description:
             - A string containing the base URL of the server hosting
               CyberArk's Privileged Account Security Web Services SDK.
+        type: str
     validate_certs:
         type: bool
         default: 'yes'
@@ -74,11 +69,17 @@ options:
         description:
             - Whether or not users will be authenticated via a RADIUS
               server. Valid values are true/false.
+    connection_number:
+        type: int
+        description:
+            - To support multiple connections for same user specify
+            - different value for this parameter.
     cyberark_session:
         description:
             - Dictionary set by a CyberArk authentication containing the
               different values to perform actions on a logged-on CyberArk
               session.
+        type: dict
 '''
 
 EXAMPLES = '''
@@ -104,8 +105,8 @@ RETURN = '''
 cyberark_session:
     description: Authentication facts.
     returned: success
-    type: dict
-    sample:
+    type: complex
+    contains:
         api_base_url:
             description:
                 - Base URL for API calls. Returned in the cyberark_session,
@@ -128,6 +129,13 @@ cyberark_session:
             type: bool
             returned: always
 '''
+
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils._text import to_text
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import open_url
+from ansible.module_utils.six.moves.urllib.error import HTTPError
+import json
 
 try:
     import httplib
@@ -304,7 +312,7 @@ def main():
         "new_password": {"type": "str", "no_log": True},
         "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
-        "connection_number": {"type": "int", "choices": range(100)},
+        "connection_number": {"type": "int", "choices": range(101)},
         "state": {
             "type": "str",
             "choices": ["present", "absent"],

@@ -3,21 +3,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
-from ansible.module_utils._text import to_text
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.urls import open_url
-from ansible.module_utils.six.moves.urllib.error import HTTPError
-import urllib
-
-import json
-try:
-    import httplib
-except ImportError:
-    # Python 3
-    import http.client as httplib
-import logging
-
 
 __metaclass__ = type
 
@@ -30,11 +15,12 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: cyberark_account
-short_description:
-    - Module for CyberArk Account object creation, deletion, and modification
-      using PAS Web Services SDK.
+short_description: Module for CyberArk Account object creation, deletion, and
+    modification using PAS Web Services SDK.
 author:
-    - CyberArk BizDev Tech (@enunez-cyberark, @cyberark-bizdev, @jimmyjamcabd)
+    - CyberArk BizDev (@cyberark-bizdev)
+    - Edward Nunez (@enunez-cyberark)
+    - James Stutes (@jimmyjamcabd)
 version_added: 2.4
 description:
     - Creates a URI for adding, deleting, modifying a privileged credential
@@ -69,7 +55,7 @@ options:
         description:
             - A string containing the base URL of the server hosting CyberArk's
               Privileged Account Security Web Services SDK.
-            - Example: U(https://<IIS_Server_Ip>/PasswordVault/api/)
+            - Example U(https://<IIS_Server_Ip>/PasswordVault/api/)
         required: true
         type: str
     validate_certs:
@@ -131,9 +117,13 @@ options:
             - The initial password for the creation of the account
         required: false
         type: str
+    new_secret:
+        description:
+            - The new secret/password to be stored in CyberArk Vault.
+        type: str
     username:
         description:
-            - The username associated with the account
+            - The username associated with the account.
         required: false
         type: str
     secret_management:
@@ -147,7 +137,7 @@ options:
                 description:
                     - Parameter that indicates whether the CPM will manage
                         the password or not.
-                default: True
+                default: False
                 type: bool
             manual_management_reason:
                 description:
@@ -176,7 +166,7 @@ options:
                 type: str
     remote_machines_access:
         description:
-            - Set of parameters for defining PSM endpoint access targets
+            - Set of parameters for defining PSM endpoint access targets.
         required: false
         type: dict
         suboptions:
@@ -273,19 +263,19 @@ changed:
     returned: always
     type: bool
 failed:
-    description: Identify if the playbook run resulted in a failure of any kind
+    description: Whether playbook run resulted in a failure of any kind.
     returned: always
     type: bool
 status_code:
-    description: Result HTTP Status code
+    description: Result HTTP Status code.
     returned: success
     type: int
     sample: "200, 201, -1, 204"
 result:
-    description: A json dump of the resulting action
+    description: A json dump of the resulting action.
     returned: success
     type: complex
-    sample:
+    contains:
         address:
             description:
                 - The adress of the endpoint where the privileged account is
@@ -293,8 +283,9 @@ result:
             returned: successful addition and modification
             type: str
             sample: dev.local
-        createdTime: Timeframe calculation of the timestamp of account creation
+        createdTime:
             description:
+                - Timeframe calculation of the timestamp of account creation.
             returned: successful addition and modification
             type: int
             sample: "1567824520"
@@ -377,6 +368,22 @@ result:
             sample: administrator
 """
 
+
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils._text import to_text
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import open_url
+from ansible.module_utils.six.moves.urllib.error import HTTPError
+import urllib
+
+import json
+try:
+    import httplib
+except ImportError:
+    # Python 3
+    import http.client as httplib
+import logging
+
 _empty = object()
 
 ansible_specific_parameters = [
@@ -436,9 +443,9 @@ ansible_reference_fieldnames = {
 
 
 def equal_value(existing, parameter):
-    if type(existing) == type(parameter):
+    if isinstance(existing, type(parameter)):
         return existing == parameter
-    elif type(existing) == str:
+    elif isinstance(existing, str):
         return existing == str(parameter)
     else:
         return str(existing) == str(parameter)
@@ -632,7 +639,7 @@ def update_account(module, existing_account):
     if len(payload["Operations"]) != 0:
         if module.check_mode:
             logging.debug("Proceeding with Update Account (CHECK_MODE)")
-            logging.debug("Operations => %s" % json.dumps(payload))
+            logging.debug("Operations => %s", json.dumps(payload))
             result = {"result": existing_account}
             changed = True
             last_status_code = -1
@@ -640,13 +647,14 @@ def update_account(module, existing_account):
             logging.debug("Proceeding with Update Account")
 
             logging.debug(
-                "Processing invidual operations (%d) => %s"
-                % (len(payload["Operations"]), json.dumps(payload))
+                "Processing invidual operations (%d) => %s",
+                len(payload["Operations"]), 
+                json.dumps(payload)
             )
             for operation in payload["Operations"]:
                 individual_payload = [operation]
                 try:
-                    logging.debug(" ==> %s" % json.dumps([operation]))
+                    logging.debug(" ==> %s", json.dumps([operation]))
                     response = open_url(
                         api_base_url + end_point,
                         method=HTTPMethod,
@@ -739,13 +747,11 @@ def add_account(module):
                     )
                     logging.debug(
                         ("parameter_name =%s.%s cyberark_property_name=%s "
-                         "cyberark_child_property_name=%s")
-                        % (
-                            parameter_name,
-                            dict_key,
-                            cyberark_property_name,
-                            cyberark_child_property_name,
-                        )
+                         "cyberark_child_property_name=%s"),
+                        parameter_name,
+                        dict_key,
+                        cyberark_property_name,
+                        cyberark_child_property_name,
                     )
                     if (
                         parameter_name + "." + dict_key
@@ -783,9 +789,9 @@ def add_account(module):
                         payload[
                             cyberark_reference_fieldnames[parameter_name]
                         ] = module_parm_value  # module.params[parameter_name]
-            logging.debug("parameter_name =%s" % (parameter_name))
+            logging.debug("parameter_name =%s", parameter_name)
 
-    logging.debug("Add Account Payload => %s" % json.dumps(payload))
+    logging.debug("Add Account Payload => %s", json.dumps(payload))
 
     try:
 
@@ -928,8 +934,9 @@ def reset_account_if_needed(module, existing_account):
         module.params, "secret_management.new_secret", "NOT_FOUND", False
     )
     logging.debug(
-        "management_action: %s  cpm_new_secret: %s"
-        % (management_action, cpm_new_secret)
+        "management_action: %s  cpm_new_secret: %s",
+        management_action,
+        cpm_new_secret
     )
 
     # Prepare result, end_point, and headers
@@ -1067,8 +1074,10 @@ def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
                 result_dct = dct
 
             logging.debug(
-                "keys=%s key_field=>%s   key=>%s"
-                % (",".join(result_dct.keys()), key_field, key)
+                "keys=%s key_field=>%s   key=>%s",
+                ",".join(result_dct.keys()),
+                key_field,
+                key
             )
             result_dct = (
                 result_dct[key_field]
@@ -1079,7 +1088,7 @@ def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
                 return default
 
         except KeyError as e:
-            logging.debug("KeyError " + to_text(e))
+            logging.debug("KeyError %s", to_text(e))
             if default is _empty:
                 raise
             return default
@@ -1091,7 +1100,7 @@ def get_account(module):
     logging.debug("Finding Account")
 
     identified_by_fields = module.params["identified_by"].split(",")
-    logging.debug("Identified_by: " + json.dumps(identified_by_fields))
+    logging.debug("Identified_by: %s", json.dumps(identified_by_fields))
     safe_filter = (
         urllib.quote("safeName eq ") + urllib.quote(module.params["safe"])
         if "safe" in module.params and module.params["safe"] is not None
@@ -1105,8 +1114,8 @@ def get_account(module):
                 deep_get(module.params, field, "NOT FOUND", False),
             )
 
-    logging.debug("Search_String => %s" % search_string)
-    logging.debug("Safe Filter => %s" % safe_filter)
+    logging.debug("Search_String => %s", search_string)
+    logging.debug("Safe Filter => %s", safe_filter)
 
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
@@ -1125,7 +1134,7 @@ def get_account(module):
     else:
         end_point = "/PasswordVault/api/accounts?filter=%s" % (safe_filter)
 
-    logging.debug("End Point => " + end_point)
+    logging.debug("End Point => %s", end_point)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -1143,7 +1152,7 @@ def get_account(module):
         result_string = response.read()
         accounts_data = json.loads(result_string)
 
-        logging.debug("RESULT => " + json.dumps(accounts_data))
+        logging.debug("RESULT => %s", json.dumps(accounts_data))
 
         if accounts_data["count"] == 0:
             return (False, None, response.getcode())
@@ -1151,9 +1160,7 @@ def get_account(module):
             how_many = 0
             first_record_found = None
             for account_record in accounts_data["value"]:
-                logging.debug(
-                    "Account Record => " + json.dumps(account_record)
-                )
+                logging.debug("Acct Record => %s", json.dumps(account_record))
                 found = False
                 for field in identified_by_fields:
                     record_field_value = deep_get(
@@ -1165,13 +1172,11 @@ def get_account(module):
                         (
                             "Comparing field %s | record_field_name=%s  "
                             "record_field_value=%s   module.params_value=%s"
-                        )
-                        % (
-                            field,
-                            field,
-                            record_field_value,
-                            deep_get(module.params, field, "NOT FOUND"),
-                        )
+                        ),
+                        field,
+                        field,
+                        record_field_value,
+                        deep_get(module.params, field, "NOT FOUND")
                     )
                     if (
                         record_field_value != "NOT FOUND"
@@ -1195,8 +1200,9 @@ def get_account(module):
                         first_record_found = account_record
 
             logging.debug(
-                "How Many: %d  First Record Found => %s"
-                % (how_many, json.dumps(first_record_found))
+                "How Many: %d  First Record Found => %s",
+                how_many,
+                json.dumps(first_record_found)
             )
             if how_many > 1:  # too many records found
                 module.fail_json(
@@ -1317,8 +1323,9 @@ def main():
 
     (found, account_record, status_code) = get_account(module)
     logging.debug(
-        "Account was %s, status_code=%s"
-        % ("FOUND" if found else "NOT FOUND", status_code)
+        "Account was %s, status_code=%s",
+        "FOUND" if found else "NOT FOUND",
+        status_code
     )
 
     changed = False
@@ -1345,14 +1352,14 @@ def main():
                     "perform_management_action"
                 ]
 
-        logging.debug("Result=>%s" % json.dumps(result))
+        logging.debug("Result=>%s", json.dumps(result))
         if (
             perform_management_action == "always"
             or (
                 perform_management_action == "on_create" and not found
             )
         ):
-            (account_reset, _, _) = reset_account_if_needed(
+            (account_reset, __unused, __unused) = reset_account_if_needed(
                 module,
                 result["result"]
             )

@@ -3,6 +3,204 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+__metaclass__ = type
+
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
+
+DOCUMENTATION = """
+---
+module: cyberark_credential
+short_description: Credential retrieval using AAM Central Credential Provider.
+author:
+    - Edward Nunez (@enunez-cyberark)
+    - CyberArk BizDev (@cyberark-bizdev)
+    - Erasmo Acosta (@erasmix)
+    - James Stutes @JimmyJamCABD)
+version_added: 2.4
+description:
+    - Creates a URI for retrieving a credential from a password object stored
+      in the Cyberark Vault.  The request uses the Privileged Account Security
+      Web Services SDK through the Central Credential Provider by requesting
+      access with an Application ID.
+
+options:
+    api_base_url:
+        type: str
+        required: true
+        description:
+            - A string containing the base URL of the server hosting the
+              Central Credential Provider.
+    validate_certs:
+        type: bool
+        required: false
+        default: false
+        description:
+            - If C(false), SSL certificate chain will not be validated.  This
+              should only set to C(true) if you have a root CA certificate
+              installed on each node.
+    app_id:
+        type: str
+        required: true
+        description:
+            - A string containing the Application ID authorized for retrieving
+              the credential.
+    query:
+        type: str
+        required: true
+        description:
+            - A string containing details of the object being queried;
+            - Possible parameters could be Safe, Folder, Object
+            - (internal account name), UserName, Address, Database,
+            - PolicyID.
+    connection_timeout:
+        type: int
+        required: false
+        default: '30'
+        description:
+            - An integer value of the allowed time before the request returns
+              failed.
+    query_format:
+        type: str
+        required: false
+        default: Exact
+        choices: [Exact, Regexp]
+        description:
+            - The format for which your Query will be received by the CCP.
+    fail_request_on_password_change:
+        type: bool
+        required: false
+        default: false
+        description:
+            - A boolean parameter for completing the request in the middle of
+              a password change of the requested credential.
+    client_cert:
+        type: str
+        required: false
+        description:
+            - A string containing the file location and name of the client
+              certificate used for authentication.
+    client_key:
+        type: str
+        required: false
+        description:
+            - A string containing the file location and name of the private
+              key of the client certificate used for authentication.
+    reason:
+        type: str
+        required: false
+        description:
+            - Reason for requesting credential if required by policy;
+            - It must be specified if the Policy managing the object
+            - requires it.
+"""
+
+EXAMPLES = """
+  tasks:
+    - name: credential retrieval basic
+      cyberark_credential:
+        api_base_url: "http://10.10.0.1"
+        app_id: "TestID"
+        query: "Safe=test;UserName=admin"
+      register: {{ result }}
+
+    - name: credential retrieval advanced
+      cyberark_credential:
+        api_base_url: "https://components.cyberark.local"
+        validate_certs: yes
+        client_cert: /etc/pki/ca-trust/source/client.pem
+        client_key: /etc/pki/ca-trust/source/priv-key.pem
+        app_id: "TestID"
+        query: "Safe=test;UserName=admin"
+        connection_timeout: 60
+        query_format: Exact
+        fail_request_on_password_change: True
+        reason: "requesting credential for Ansible deployment"
+      register: {{ result }}
+
+"""
+
+RETURN = """
+changed:
+    description:
+        - Identify if the playbook run resulted in a change to the account in
+          any way.
+    returned: always
+    type: bool
+failed:
+    description: Whether playbook run resulted in a failure of any kind.
+    returned: always
+    type: bool
+status_code:
+    description: Result HTTP Status code.
+    returned: success
+    type: int
+    sample: "200, 201, -1, 204"
+result:
+    description: A json dump of the resulting action.
+    returned: success
+    type: complex
+    contains:
+        Address:
+            description: The target address of the credential being queried
+            type: str
+            returned: if required
+        Content:
+            description: The password for the object being queried
+            type: str
+            returned: always
+        CreationMethod:
+            description: This is how the object was created in the Vault
+            type: str
+            returned: always
+        DeviceType:
+            description:
+                - An internal File Category for more granular management of
+                  Platforms.
+            type: str
+            returned: always
+        Folder:
+            description:
+                - The folder within the Safe where the credential is stored.
+            type: str
+            returned: always
+        Name:
+            description:
+                - The Cyberark unique object ID of the credential being
+                  queried.
+            type: str
+            returned: always
+        PasswordChangeInProcess:
+            description: If the password has a change flag placed by the CPM
+            type: bool
+            returned: always
+        PolicyID:
+            description: Whether or not SSL certificates should be validated.
+            type: str
+            returned: if assigned to a policy
+        Safe:
+            description: The safe where the queried credential is stored
+            type: string
+            returned: always
+        Username:
+            description: The username of the credential being queried
+            type: str
+            returned: if required
+        LogonDomain:
+            description: The Address friendly name resolved by the CPM
+            type: str
+            returned: if populated
+        CPMDisabled:
+            description:
+                - A description of why this vaulted credential is not being
+                  managed by the CPM.
+            type: str
+            returned: if CPM management is disabled and a reason is given
+"""
+
 from __future__ import absolute_import, division, print_function
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
@@ -16,196 +214,6 @@ try:
 except ImportError:
     # Python 3
     import http.client as httplib
-
-__metaclass__ = type
-
-ANSIBLE_METADATA = {
-    "metadata_version": "1.1",
-    "status": ["preview"],
-    "supported_by": "community",
-}
-
-DOCUMENTATION = """
----
-module: cyberark_credential
-short_description:
-    - Module for retrieval of CyberArk vaulted credential using PAS Web
-      Services SDK through the Central Credential Provider.
-author:
-    - Edward Nunez @ CyberArk BizDev (@enunez-cyberark, @cyberark-bizdev,
-      @erasmix @JimmyJamCABD)
-version_added: 2.4
-description:
-    - Creates a URI for retrieving a credential from a password object stored
-      in the Cyberark Vault.  The request uses the Privileged Account Security
-      Web Services SDK through the Central Credential Provider by requesting
-      access with an Application ID.
-
-options:
-    api_base_url:
-        type: string
-        required: 'Yes'
-        description:
-            - A string containing the base URL of the server hosting the
-              Central Credential Provider.
-    validate_certs:
-        type: bool
-        required: 'No'
-        default: 'No'
-        description:
-            - If C(false), SSL certificate chain will not be validated.  This
-              should only set to C(true) if you have a root CA certificate
-              installed on each node.
-    app_id:
-        type: string
-        required: 'Yes'
-        description:
-            - A string containing the Application ID authorized for retrieving
-              the credential.
-    query:
-        type: string
-        required: 'Yes'
-        description:
-            - A string containing details of the object being queried.
-        parameters:
-            Safe=<safe name>
-            Folder=<folder name within safe>
-            Object=<object name>
-            UserName=<username of object>
-            Address=<address listed for object>
-            Database=<optional file category for database objects>
-            PolicyID=<platform id managing object>
-    connection_timeout:
-        type: integer
-        required: 'No'
-        default: '30'
-        description:
-            - An integer value of the allowed time before the request returns
-              failed.
-    query_format:
-        type: choice
-        required: 'No'
-        default: 'Exact'
-        description:
-            - The format for which your Query will be received by the CCP.
-        parameters:
-            Exact
-            Regexp
-    fail_request_on_password_change:
-        type: bool
-        required: 'No'
-        default: 'False'
-        description:
-            - A boolean parameter for completing the request in the middle of
-              a password change of the requested credential.
-    client_cert:
-        type: string
-        required: 'No'
-        description:
-            - A string containing the file location and name of the client
-              certificate used for authentication.
-    client_key:
-        type: string
-        required: 'No'
-        description:
-            - A string containing the file location and name of the private
-              key of the client certificate used for authentication.
-    reason:
-        type: string
-        required: 'Only if the Policy managing the object requires it'
-        description:
-            - Reason for requesting credential if required by policy.
-"""
-
-EXAMPLES = """
-- name: credential retrieval basic
-  cyberark_credential:
-    api_base_url: "http://10.10.0.1"
-    app_id: "TestID"
-    query: "Safe=test;UserName=admin"
-  register: {{ result }}
-
-- name: credential retrieval advanced
-  cyberark_credential:
-    api_base_url: "https://components.cyberark.local"
-    validate_certs: yes
-    client_cert: /etc/pki/ca-trust/source/client.pem
-    client_key: /etc/pki/ca-trust/source/priv-key.pem
-    app_id: "TestID"
-    query: "Safe=test;UserName=admin"
-    connection_timeout: 60
-    query_format: Exact
-    fail_request_on_password_change: True
-    reason: "requesting credential for Ansible deployment"
-  register: {{ result }}
-
-"""
-
-RETURN = """
-"{{}}": {
-    "changed": false,
-    "failed": false,
-    "result": {
-        "Address": "string"
-            description: The target address of the credential being queried
-            type: string
-            returned: if required
-        "Content": "string"
-            description: The password for the object being queried
-            type: string
-            returned: always
-        "CreationMethod": "string"
-            description: This is how the object was created in the Vault
-            type: string
-            returned: always
-        "DeviceType": "string"
-            description:
-                - An internal File Category for more granular management of
-                  Platforms.
-            type: string
-            returned: always
-        "Folder": "string"
-            description:
-                - The folder within the Safe where the credential is stored.
-            type: string
-            returned: always
-        "Name": "string"
-            description:
-                - The Cyberark unique object ID of the credential being
-                  queried.
-            type: string
-            returned: always
-        "PasswordChangeInProcess": "bool"
-            description: If the password has a change flag placed by the CPM
-            type: bool
-            returned: always
-        "PolicyID": "string"
-            description: Whether or not SSL certificates should be validated.
-            type: string
-            returned: if assigned to a policy
-        "Safe": "string"
-            description: The safe where the queried credential is stored
-            type: string
-            returned: always
-        "Username": "string"
-            description: The username of the credential being queried
-            type: string
-            returned: if required
-        "LogonDomain": "string"
-            description: The Address friendly name resolved by the CPM
-            type: string
-            returned: if populated
-        "CPMDisabled": "string"
-            description:
-                - A description of why this vaulted credential is not being
-                  managed by the CPM.
-            type: string
-            returned: if CPM management is disabled and a reason is given
-        },
-        "status_code": 200
-    }
-}
-"""
 
 
 def retrieve_credential(module):

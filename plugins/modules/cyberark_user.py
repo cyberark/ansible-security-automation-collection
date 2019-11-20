@@ -5,17 +5,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
-import json
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_text
-from ansible.module_utils.six.moves import http_client as httplib
-from ansible.module_utils.six.moves.urllib.error import HTTPError
-from ansible.module_utils.urls import open_url
-import logging
-import urllib
-
 
 __metaclass__ = type
 
@@ -28,12 +17,12 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = r"""
 ---
 module: cyberark_user
-short_description:
-    - Module for CyberArk User Management using PAS Web Services SDK
+short_description: CyberArk User Management using PAS Web Services SDK.
 author:
-  - Edward Nunez (@enunez-cyberark) CyberArk BizDev
+  - Edward Nunez (@enunez-cyberark)
   - Cyberark Bizdev (@cyberark-bizdev)
-  - erasmix (@erasmix)
+  - Erasmo Acosta (@erasmix)
+  - James Stutes (@jimmyjamcabd)
 version_added: 2.4
 description:
     - CyberArk User Management using PAS Web Services SDK,
@@ -54,6 +43,20 @@ options:
         type: str
         choices: [ absent, present ]
         default: present
+    logging_level:
+        description:
+            - Parameter used to define the level of troubleshooting output to
+              the C(logging_file) value.
+        required: true
+        choices: [NOTSET, DEBUG, INFO]
+        default: NOTSET
+        type: str
+    logging_file:
+        description:
+            - Setting the log file name and location for troubleshooting logs.
+        required: false
+        default: /tmp/ansible_cyberark.log
+        type: str
     cyberark_session:
         description:
             - Dictionary set by a CyberArk authentication containing the
@@ -154,8 +157,8 @@ changed:
 cyberark_user:
     description: Dictionary containing result properties.
     returned: always
-    type: dict
-    sample:
+    type: complex
+    contains:
         result:
             description: user properties when state is present
             type: dict
@@ -166,6 +169,17 @@ status_code:
     type: int
     sample: 200
 """
+
+from __future__ import absolute_import, division, print_function
+import json
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_text
+from ansible.module_utils.six.moves import http_client as httplib
+from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module_utils.urls import open_url
+import logging
+import urllib
 
 
 def user_details(module):
@@ -311,8 +325,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         + " module.params = "
         + json.dumps(module.params)
     )
-    logging.debug("Existing Info: " + json.dumps(existing_info))
-    logging.debug("payload => " + json.dumps(payload))
+    logging.debug("Existing Info: %s", json.dumps(existing_info))
+    logging.debug("payload => %s", json.dumps(payload))
 
     if HTTPMethod == "PUT" and (
         "new_password" not in module.params
@@ -331,13 +345,13 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             "Location",
         ]
         for field_name in updateable_fields:
-            logging.debug("#### field_name : " + field_name)
+            logging.debug("#### field_name : %s", field_name)
             if (
                 field_name in payload
                 and field_name in existing_info
                 and payload[field_name] != existing_info[field_name]
             ):
-                logging.debug("Changing value for " + field_name)
+                logging.debug("Changing value for %s", field_name)
                 proceed = True
     else:
         proceed = True
@@ -576,7 +590,7 @@ def main():
 
             if group_name is not None:
                 # If user exists, add to group if needed
-                (changed_group, _, _) = user_add_to_group(module)
+                (changed_group, __unused, __unused) = user_add_to_group(module)
                 changed = changed or changed_group
 
         elif status_code == 404:
@@ -589,7 +603,7 @@ def main():
 
             if status_code == 201 and group_name is not None:
                 # If user was created, add to group if needed
-                (changed, _, _) = user_add_to_group(module)
+                (changed, __unused, __unused) = user_add_to_group(module)
 
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)
