@@ -3,6 +3,7 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -309,6 +310,8 @@ result:
             sample:
                 "KEY": "VALUE"
                     description:
+                        - Object containing key-value pairs to associate with the
+                          account, as defined by the account platform.
                     returned: successful addition and modification
                     type: str
                     sample:
@@ -369,7 +372,6 @@ result:
 """
 
 
-from __future__ import absolute_import, division, print_function
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
@@ -529,7 +531,7 @@ def update_account(module, existing_account):
                                 logging.debug(
                                     ("child_module_parm_value: %s "
                                      "child_existing_account_value=%s path=%s")
-                                    % (
+                                    (
                                         child_module_parm_value,
                                         child_existing_account_value,
                                         path_value,
@@ -569,7 +571,7 @@ def update_account(module, existing_account):
                                 )
                             logging.debug(
                                 "parameter_name=%s  value=%s existing=%s"
-                                % (
+                                (
                                     path_value,
                                     child_module_parm_value,
                                     child_existing_account_value,
@@ -630,7 +632,7 @@ def update_account(module, existing_account):
                         )
                     logging.debug(
                         "parameter_name=%s  value=%s existing=%s"
-                        % (
+                        (
                             parameter_name, module_parm_value,
                             existing_account_value
                         )
@@ -648,7 +650,7 @@ def update_account(module, existing_account):
 
             logging.debug(
                 "Processing invidual operations (%d) => %s",
-                len(payload["Operations"]), 
+                len(payload["Operations"]),
                 json.dumps(payload)
             )
             for operation in payload["Operations"]:

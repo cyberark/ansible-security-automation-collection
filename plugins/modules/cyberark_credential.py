@@ -3,6 +3,8 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -19,7 +21,7 @@ author:
     - Edward Nunez (@enunez-cyberark)
     - CyberArk BizDev (@cyberark-bizdev)
     - Erasmo Acosta (@erasmix)
-    - James Stutes @JimmyJamCABD)
+    - James Stutes (@JimmyJamCABD)
 version_added: 2.4
 description:
     - Creates a URI for retrieving a credential from a password object stored
@@ -201,7 +203,6 @@ result:
             returned: if CPM management is disabled and a reason is given
 """
 
-from __future__ import absolute_import, division, print_function
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url

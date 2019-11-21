@@ -5,6 +5,7 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -170,7 +171,6 @@ status_code:
     sample: 200
 """
 
-from __future__ import absolute_import, division, print_function
 import json
 
 from ansible.module_utils.basic import AnsibleModule
