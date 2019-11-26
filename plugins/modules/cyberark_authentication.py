@@ -313,7 +313,7 @@ def main():
         "new_password": {"type": "str", "no_log": True},
         "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
-        "connection_number": {"type": "int", "choices": range(101)},
+        "connection_number": {"type": "int"},
         "state": {
             "type": "str",
             "choices": ["present", "absent"],
