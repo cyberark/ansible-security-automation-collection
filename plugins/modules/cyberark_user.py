@@ -590,7 +590,7 @@ def main():
 
             if group_name is not None:
                 # If user exists, add to group if needed
-                (changed_group, __unused, __unused) = user_add_to_group(module)
+                (changed_group, no_result, no_status_code) = user_add_to_group(module)
                 changed = changed or changed_group
 
         elif status_code == 404:
@@ -603,7 +603,7 @@ def main():
 
             if status_code == 201 and group_name is not None:
                 # If user was created, add to group if needed
-                (changed, __unused, __unused) = user_add_to_group(module)
+                (changed, no_result, no_status_code) = user_add_to_group(module)
 
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)

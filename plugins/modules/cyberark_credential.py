@@ -39,7 +39,7 @@ options:
     validate_certs:
         type: bool
         required: false
-        default: false
+        default: true
         description:
             - If C(false), SSL certificate chain will not be validated.  This
               should only set to C(true) if you have a root CA certificate
@@ -107,7 +107,7 @@ EXAMPLES = """
         api_base_url: "http://10.10.0.1"
         app_id: "TestID"
         query: "Safe=test;UserName=admin"
-      register: {{ result }}
+      register: result
 
     - name: credential retrieval advanced
       cyberark_credential:
@@ -121,7 +121,7 @@ EXAMPLES = """
         query_format: Exact
         fail_request_on_password_change: True
         reason: "requesting credential for Ansible deployment"
-      register: {{ result }}
+      register: result
 
 """
 
@@ -207,7 +207,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
-from ansible.compat.six.moves.urllib.parse import quote
+from ansible.module_utils.six.moves.urllib.parse import quote
 import json
 
 try:
@@ -337,7 +337,6 @@ def main():
         "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False},
-        "state": {"type": "str", "choices": ["present"], "default": "present"},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)

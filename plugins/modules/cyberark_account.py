@@ -307,8 +307,8 @@ result:
                   account, as defined by the account platform.
             returned: successful addition and modification
             type: complex
-            sample:
-                "KEY": "VALUE"
+            contains:
+                KEY VALUE:
                     description:
                         - Object containing key-value pairs to associate with the
                           account, as defined by the account platform.
@@ -331,14 +331,14 @@ result:
             returned: successful addition and modification
             type: str
             sample: Domain_Admins
-        secretManagement
+        secretManagement:
             description:
                 - Set of parameters associated with the management of
                   the credential.
             returned: successful addition and modification
             type: complex
             sample:
-                automaticManagementEnabled
+                automaticManagementEnabled:
                     description:
                         - Parameter that indicates whether the CPM will manage
                           the password or not.
@@ -445,12 +445,12 @@ ansible_reference_fieldnames = {
 
 
 def equal_value(existing, parameter):
-    if isinstance(existing, type(parameter)):
-        return existing == parameter
-    elif isinstance(existing, str):
+    if isinstance(existing, str):
         return existing == str(parameter)
+    elif isinstance(parameter, str):
+        return str(existing) == parameter
     else:
-        return str(existing) == str(parameter)
+        return existing == parameter
 
 
 def update_account(module, existing_account):
@@ -1361,7 +1361,7 @@ def main():
                 perform_management_action == "on_create" and not found
             )
         ):
-            (account_reset, __unused, __unused) = reset_account_if_needed(
+            (account_reset, no_result, no_status_code) = reset_account_if_needed(
                 module,
                 result["result"]
             )
