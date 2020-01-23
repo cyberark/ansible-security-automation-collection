@@ -530,7 +530,7 @@ def update_account(module, existing_account):
                             if child_existing_account_value is not None:
                                 logging.debug(
                                     ("child_module_parm_value: %s "
-                                     "child_existing_account_value=%s path=%s")
+                                     "child_existing_account_value=%s path=%s")%
                                     (
                                         child_module_parm_value,
                                         child_existing_account_value,
@@ -570,7 +570,7 @@ def update_account(module, existing_account):
                                     }
                                 )
                             logging.debug(
-                                "parameter_name=%s  value=%s existing=%s"
+                                "parameter_name=%s  value=%s existing=%s"%
                                 (
                                     path_value,
                                     child_module_parm_value,
@@ -631,7 +631,7 @@ def update_account(module, existing_account):
                             }
                         )
                     logging.debug(
-                        "parameter_name=%s  value=%s existing=%s"
+                        "parameter_name=%s  value=%s existing=%s"%
                         (
                             parameter_name, module_parm_value,
                             existing_account_value
@@ -1104,7 +1104,7 @@ def get_account(module):
     identified_by_fields = module.params["identified_by"].split(",")
     logging.debug("Identified_by: %s", json.dumps(identified_by_fields))
     safe_filter = (
-        urllib.quote("safeName eq ") + urllib.quote(module.params["safe"])
+        urllib.parse.quote("safeName eq ") + urllib.parse.quote(module.params["safe"])
         if "safe" in module.params and module.params["safe"] is not None
         else None
     )
@@ -1127,7 +1127,7 @@ def get_account(module):
     if search_string is not None and safe_filter is not None:
         end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (
             safe_filter,
-            urllib.quote(search_string.lstrip()),
+            urllib.parse.quote(search_string.lstrip()),
         )
     elif search_string is not None:
         end_point = (
