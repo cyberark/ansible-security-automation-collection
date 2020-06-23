@@ -266,8 +266,10 @@ def processAuthentication(module):
             try:
                 if use_shared_logon:
                     token = json.loads(response.read())["LogonResult"]
-                else:
+                elif json.loads(response.read())["CyberArkLogonResult"]:
                     token = json.loads(response.read())["CyberArkLogonResult"]
+                else:
+                    token = json.loads(response.read()).strip('"')
             except Exception as e:
                 module.fail_json(
                     msg="Error obtaining token\n%s" % (to_text(e)),
