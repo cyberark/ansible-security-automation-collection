@@ -35,6 +35,10 @@ options:
             - Specifies if an authentication logon/logoff and a
               cyberark_session should be added/removed.
         type: str
+    auth_type:
+        description:
+            - The authentication type to use for logon.
+              Accepted values: cyberark, ldap, windows
     username:
         description:
             - The name of the user who will logon to the Vault.
@@ -90,12 +94,12 @@ EXAMPLES = '''
     api_base_url: "{{ web_services_base_url }}"
     use_shared_logon_authentication: yes
 
-- name: Logon - Not use_shared_logon_authentication
+- name: Logon - LDAP Authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
-    use_shared_logon_authentication: no
+    auth_type: ldap
 
 - name: Logoff from CyberArk Vault
   cyberark_authentication:
@@ -151,6 +155,7 @@ def processAuthentication(module):
 
     api_base_url = module.params["api_base_url"]
     validate_certs = module.params["validate_certs"]
+    auth_type = module.params["auth_type"]
     username = module.params["username"]
     password = module.params["password"]
     new_password = module.params["new_password"]
@@ -177,7 +182,11 @@ def processAuthentication(module):
 
             end_point = ("/PasswordVault/WebServices/auth/Shared"
                          "/RestfulAuthenticationService.svc/Logon")
-
+        elif auth_type == 'cyberark'
+            or auth_type == 'ldap'
+            or auth_type == 'windows':
+                end_point = ("/PasswordVault/WebServices/auth/"+auth_type+
+                             "/CyberArkAuthenticationService.svc/Logon")
         else:
 
             end_point = ("/PasswordVault/WebServices/auth/Cyberark"
@@ -212,6 +221,11 @@ def processAuthentication(module):
         if use_shared_logon:
             end_point = ("/PasswordVault/WebServices/auth/Shared"
                          "/RestfulAuthenticationService.svc/Logoff")
+        elif auth_type == 'cyberark'
+            or auth_type == 'ldap'
+            or auth_type == 'windows':
+                end_point = ("/PasswordVault/WebServices/auth/"+auth_type+
+                             "/CyberArkAuthenticationService.svc/Logoff")
         else:
             end_point = ("/PasswordVault/WebServices/auth/Cyberark"
                          "/CyberArkAuthenticationService.svc/Logoff")
@@ -266,10 +280,8 @@ def processAuthentication(module):
             try:
                 if use_shared_logon:
                     token = json.loads(response.read())["LogonResult"]
-                elif json.loads(response.read())["CyberArkLogonResult"]:
-                    token = json.loads(response.read())["CyberArkLogonResult"]
                 else:
-                    token = json.loads(response.read()).strip('"')
+                    token = json.loads(response.read())["CyberArkLogonResult"]
             except Exception as e:
                 module.fail_json(
                     msg="Error obtaining token\n%s" % (to_text(e)),
@@ -313,6 +325,7 @@ def main():
         "username": {"type": "str"},
         "password": {"type": "str", "no_log": True},
         "new_password": {"type": "str", "no_log": True},
+        "auth_type": {"default": "cyberark", "type": "str"}
         "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
         "connection_number": {"type": "int"},
