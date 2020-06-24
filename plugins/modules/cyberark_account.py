@@ -375,7 +375,7 @@ result:
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
-from ansible.module_utils.six.moves.urllib.error import HTTPError
+from ansible.module_utils.urls import urllib_error 
 import urllib
 
 import json
@@ -671,9 +671,9 @@ def update_account(module, existing_account):
 
                 #                return (True, result, response.getcode())
 
-                except (HTTPError, httplib.HTTPException) as http_exception:
+                except (urllib.error.HTTPError, httplib.HTTPException) as http_exception:
 
-                    if isinstance(http_exception, HTTPError):
+                    if isinstance(http_exception, urllib.error.HTTPError):
                         res = json.load(http_exception)
                     else:
                         res = to_text(http_exception)
@@ -814,9 +814,9 @@ def add_account(module):
 
             return (True, result, response.getcode())
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (urllib.error.HTTPError, httplib.HTTPException) as http_exception:
 
-        if isinstance(http_exception, HTTPError):
+        if isinstance(http_exception, urllib.error.HTTPError):
             res = json.load(http_exception)
         else:
             res = to_text(http_exception)
@@ -885,9 +885,9 @@ def delete_account(module, existing_account):
 
             return (True, result, response.getcode())
 
-        except (HTTPError, httplib.HTTPException) as http_exception:
+        except (urllib.error.HTTPError, httplib.HTTPException) as http_exception:
 
-            if isinstance(http_exception, HTTPError):
+            if isinstance(http_exception, urllib.error.HTTPError):
                 res = json.load(http_exception)
             else:
                 res = to_text(http_exception)
@@ -1021,9 +1021,9 @@ def reset_account_if_needed(module, existing_account):
 
                 return (True, result, response.getcode())
 
-            except (HTTPError, httplib.HTTPException) as http_exception:
+            except (urllib.error.HTTPError, httplib.HTTPException) as http_exception:
 
-                if isinstance(http_exception, HTTPError):
+                if isinstance(http_exception, urllib.error.HTTPError):
                     res = json.load(http_exception)
                 else:
                     res = to_text(http_exception)
@@ -1216,7 +1216,7 @@ def get_account(module):
             else:
                 return (how_many == 1, first_record_found, response.getcode())
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (urllib.error.HTTPError, httplib.HTTPException) as http_exception:
 
         if http_exception.code == 404:
             return (False, None, http_exception.code)
