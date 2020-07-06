@@ -196,6 +196,7 @@ def user_details(module):
     end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(
         username
     )
+    
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
 
@@ -470,8 +471,15 @@ def user_add_to_group(module):
 
     # Get username, and groupname from module parameters, and api base url
     # along with validate_certs from the cyberark_session established
+    
+    # Not needed for new version 
     username = module.params["username"]
-    group_name = module.params["group_name"]
+    # group_name = module.params["group_name"]
+    vault_id = module.params["vault_id"]
+    member_id = username
+    member_type = "Vault" if module.params["member_type"] is None else module.params["member_type"]
+    domain_name = module.params["domain_name"] if module.params["member_type"].lower()=="domain" else None
+
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
@@ -479,15 +487,18 @@ def user_add_to_group(module):
     # Prepare result, end_point, headers and payload
     result = {}
     end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc/Groups/{0}/Users"
+        "/PasswordVault/api/UserGroups/{0}/Members"
     ).format(
-        urllib.quote(group_name)
+        urllib.quote(vault_id)
     )
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
-    payload = {"UserName": username}
-
+    # payload = {"UserName": username}
+    payload = {"memberId": member_id, "memberType": member_type}
+    if domain_name:
+        payload["domain_name"] = domain_name
+    
     try:
 
         # execute REST action
@@ -564,6 +575,11 @@ def main():
             disabled=dict(type="bool"),
             location=dict(type="str"),
             group_name=dict(type="str"),
+            
+            vault_id=dict(type="str"),
+            member_type=dict(type="str"),
+            domain_name=dict(type="str"),
+            
         )
     )
 
@@ -584,9 +600,7 @@ def main():
         if status_code == 200:
             # User already exists
 
-            (changed, result, status_code) = user_add_or_update(
-                module, "PUT", result["result"]
-            )
+            (changed, result, status_code) = user_add_or_update(module, "PUT", result["result"])
 
             if group_name is not None:
                 # If user exists, add to group if needed
