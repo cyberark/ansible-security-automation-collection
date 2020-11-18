@@ -325,7 +325,7 @@ def main():
         "username": {"type": "str"},
         "password": {"type": "str", "no_log": True},
         "new_password": {"type": "str", "no_log": True},
-        "auth_type": {"default": "cyberark", "type": "str"}
+        "auth_type": {"default": "cyberark", "type": "str"},
         "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
         "connection_number": {"type": "int"},
