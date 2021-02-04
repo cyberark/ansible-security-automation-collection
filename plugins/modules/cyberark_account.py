@@ -3,7 +3,7 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
+
 
 __metaclass__ = type
 
@@ -376,11 +376,11 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import json
 try:
-    import httplib
+    import http.client
 except ImportError:
     # Python 3
     import http.client as httplib
@@ -477,7 +477,7 @@ def update_account(module, existing_account):
     payload = {"Operations": []}
 
     # Determining whether to add or update properties
-    for parameter_name in module.params.keys():
+    for parameter_name in list(module.params.keys()):
         if (
             parameter_name not in ansible_specific_parameters
             and module.params[parameter_name] is not None
@@ -491,7 +491,7 @@ def update_account(module, existing_account):
             existing_account_value = referenced_value(
                 cyberark_property_name,
                 existing_account,
-                keys=existing_account.keys()
+                keys=list(existing_account.keys())
             )
             if cyberark_property_name not in cyberark_fixed_properties:
                 if module_parm_value is not None and isinstance(
@@ -501,7 +501,7 @@ def update_account(module, existing_account):
                     replacing = {}
                     adding = {}
                     removing = {}
-                    for child_parm_name in module_parm_value.keys():
+                    for child_parm_name in list(module_parm_value.keys()):
                         nested_parm_name = "%s.%s" % (
                             parameter_name,
                             child_parm_name)
@@ -519,7 +519,7 @@ def update_account(module, existing_account):
                             child_existing_account_value = referenced_value(
                                 child_cyberark_property_name,
                                 existing_account_value,
-                                existing_account_value.keys()
+                                list(existing_account_value.keys())
                                 if existing_account_value is not None
                                 else {},
                             )
@@ -578,7 +578,7 @@ def update_account(module, existing_account):
                                 )
                             )
                     # Processing child operations
-                    if len(adding.keys()) > 0:
+                    if len(list(adding.keys())) > 0:
                         payload["Operations"].append(
                             {
                                 "op": "add",
@@ -586,7 +586,7 @@ def update_account(module, existing_account):
                                 "value": adding,
                             }
                         )
-                    if len(replacing.keys()) > 0:
+                    if len(list(replacing.keys())) > 0:
                         payload["Operations"].append(
                             {
                                 "op": "replace",
@@ -671,7 +671,7 @@ def update_account(module, existing_account):
 
                 #                return (True, result, response.getcode())
 
-                except (HTTPError, httplib.HTTPException) as http_exception:
+                except (HTTPError, http.client.HTTPException) as http_exception:
 
                     if isinstance(http_exception, HTTPError):
                         res = json.load(http_exception)
@@ -729,7 +729,7 @@ def add_account(module):
 
     payload = {"safeName": module.params["safe"]}
 
-    for parameter_name in module.params.keys():
+    for parameter_name in list(module.params.keys()):
         if (
             parameter_name not in ansible_specific_parameters
             and module.params[parameter_name] is not None
@@ -741,7 +741,7 @@ def add_account(module):
             )
             if isinstance(module.params[parameter_name], dict):
                 payload[cyberark_property_name] = {}
-                for dict_key in module.params[parameter_name].keys():
+                for dict_key in list(module.params[parameter_name].keys()):
                     cyberark_child_property_name = referenced_value(
                         dict_key,
                         cyberark_reference_fieldnames,
@@ -814,7 +814,7 @@ def add_account(module):
 
             return (True, result, response.getcode())
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (HTTPError, http.client.HTTPException) as http_exception:
 
         if isinstance(http_exception, HTTPError):
             res = json.load(http_exception)
@@ -885,7 +885,7 @@ def delete_account(module, existing_account):
 
             return (True, result, response.getcode())
 
-        except (HTTPError, httplib.HTTPException) as http_exception:
+        except (HTTPError, http.client.HTTPException) as http_exception:
 
             if isinstance(http_exception, HTTPError):
                 res = json.load(http_exception)
@@ -985,7 +985,7 @@ def reset_account_if_needed(module, existing_account):
             "/PasswordVault/API/Accounts/%s/Reconcile"
         ) % existing_account_id
     elif (
-        "new_secret" in module.params.keys()
+        "new_secret" in list(module.params.keys())
         and module.params["new_secret"] is not None
     ):
         logging.debug("Change Credential in Vault")
@@ -1021,7 +1021,7 @@ def reset_account_if_needed(module, existing_account):
 
                 return (True, result, response.getcode())
 
-            except (HTTPError, httplib.HTTPException) as http_exception:
+            except (HTTPError, http.client.HTTPException) as http_exception:
 
                 if isinstance(http_exception, HTTPError):
                     res = json.load(http_exception)
@@ -1072,18 +1072,18 @@ def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
                     key, cyberark_reference_fieldnames, default=key
                 )
 
-            if len(result_dct.keys()) == 0:  # No result_dct set yet
+            if len(list(result_dct.keys())) == 0:  # No result_dct set yet
                 result_dct = dct
 
             logging.debug(
                 "keys=%s key_field=>%s   key=>%s",
-                ",".join(result_dct.keys()),
+                ",".join(list(result_dct.keys())),
                 key_field,
                 key
             )
             result_dct = (
                 result_dct[key_field]
-                if key_field in result_dct.keys()
+                if key_field in list(result_dct.keys())
                 else result_dct[key]
             )
             if result_dct is None:
@@ -1216,7 +1216,7 @@ def get_account(module):
             else:
                 return (how_many == 1, first_record_found, response.getcode())
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (HTTPError, http.client.HTTPException) as http_exception:
 
         if http_exception.code == 404:
             return (False, None, http_exception.code)
@@ -1344,11 +1344,11 @@ def main():
             (changed, result, status_code) = add_account(module)
 
         perform_management_action = "always"
-        if "secret_management" in module.params.keys():
+        if "secret_management" in list(module.params.keys()):
             secret_management = module.params["secret_management"]
             if (
                 secret_management is not None
-                and "perform_management_action" in secret_management.keys()
+                and "perform_management_action" in list(secret_management.keys())
             ):
                 perform_management_action = secret_management[
                     "perform_management_action"

@@ -5,7 +5,7 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
+
 
 __metaclass__ = type
 
@@ -179,7 +179,7 @@ from ansible.module_utils.six.moves import http_client as httplib
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.urls import open_url
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 
 def user_details(module):
@@ -265,7 +265,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         end_point = "/PasswordVault/WebServices/PIMServices.svc/Users"
         payload["UserName"] = username
         if (
-            "initial_password" in module.params.keys()
+            "initial_password" in list(module.params.keys())
             and module.params["initial_password"] is not None
         ):
             payload["InitialPassword"] = module.params["initial_password"]
@@ -489,7 +489,7 @@ def user_add_to_group(module):
     end_point = (
         "/PasswordVault/api/UserGroups/{0}/Members"
     ).format(
-        urllib.quote(vault_id)
+        urllib.parse.quote(vault_id)
     )
 
     headers = {"Content-Type": "application/json"}
