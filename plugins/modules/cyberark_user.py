@@ -262,7 +262,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     # for POST -- create -- payload contains username
     # for PUT -- update -- username is part of the endpoint
     if HTTPMethod == "POST":
-        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users"
+        end_point = "PasswordVault/api/Users"
         payload["UserName"] = username
         if (
             "initial_password" in list(module.params.keys())
@@ -415,7 +415,7 @@ def user_delete(module):
     # Prepare result, end_point, and headers
     result = {}
     end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc/Users/{0}"
+        "PasswordVault/api/Users/{0}"
     ).format(username)
 
     headers = {"Content-Type": "application/json"}
