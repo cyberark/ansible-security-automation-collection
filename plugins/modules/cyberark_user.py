@@ -469,12 +469,13 @@ def user_delete(module):
 
 def user_add_to_group(module):
 
-    # Get username, vault_id, member type from module parameters, and api base url
+    # Get username, and groupname from module parameters, and api base url
     # along with validate_certs from the cyberark_session established
     
     # Not needed for new version 
     username = module.params["username"]
-    group_name = module.params["group_name"]
+    # group_name = module.params["group_name"]
+    vault_id = module.params["vault_id"]
     member_id = username
     member_type = "Vault" if module.params["member_type"] is None else module.params["member_type"]
     domain_name = module.params["domain_name"] if member_type == "domain" else None
@@ -485,16 +486,18 @@ def user_add_to_group(module):
 
     # Prepare result, end_point, headers and payload
     result = {}
-
     end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc/Groups/{0}/Users"       
+        "/PasswordVault/api/UserGroups/{0}/Members"
     ).format(
-        urllib.parse.quote(group_name)
+        urllib.parse.quote(vault_id)
     )
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
-    payload = {"UserName": username}
+    # payload = {"UserName": username}
+    payload = {"memberId": member_id, "memberType": member_type}
+    if domain_name:
+        payload["domain_name"] = domain_name
     
     try:
 
