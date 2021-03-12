@@ -4,7 +4,6 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -379,6 +378,7 @@ from ansible.module_utils.six.moves.urllib.error import HTTPError
 import urllib.request, urllib.parse, urllib.error
 
 import json
+
 try:
     import http.client
 except ImportError:
@@ -484,14 +484,12 @@ def update_account(module, existing_account):
         ):
             module_parm_value = module.params[parameter_name]
             cyberark_property_name = referenced_value(
-                parameter_name,
-                cyberark_reference_fieldnames,
-                default=parameter_name
+                parameter_name, cyberark_reference_fieldnames, default=parameter_name
             )
             existing_account_value = referenced_value(
                 cyberark_property_name,
                 existing_account,
-                keys=list(existing_account.keys())
+                keys=list(existing_account.keys()),
             )
             if cyberark_property_name not in cyberark_fixed_properties:
                 if module_parm_value is not None and isinstance(
@@ -502,15 +500,9 @@ def update_account(module, existing_account):
                     adding = {}
                     removing = {}
                     for child_parm_name in list(module_parm_value.keys()):
-                        nested_parm_name = "%s.%s" % (
-                            parameter_name,
-                            child_parm_name)
-                        if (
-                            nested_parm_name not in ansible_specific_parameters
-                        ):
-                            child_module_parm_value = module_parm_value[
-                                child_parm_name
-                            ]
+                        nested_parm_name = "%s.%s" % (parameter_name, child_parm_name)
+                        if nested_parm_name not in ansible_specific_parameters:
+                            child_module_parm_value = module_parm_value[child_parm_name]
                             child_cyberark_property_name = referenced_value(
                                 child_parm_name,
                                 cyberark_reference_fieldnames,
@@ -529,9 +521,11 @@ def update_account(module, existing_account):
                             )
                             if child_existing_account_value is not None:
                                 logging.debug(
-                                    ("child_module_parm_value: %s "
-                                     "child_existing_account_value=%s path=%s")%
                                     (
+                                        "child_module_parm_value: %s "
+                                        "child_existing_account_value=%s path=%s"
+                                    )
+                                    % (
                                         child_module_parm_value,
                                         child_existing_account_value,
                                         path_value,
@@ -540,8 +534,7 @@ def update_account(module, existing_account):
                                 if child_module_parm_value == removal_value:
                                     removing.update(
                                         {
-                                            child_cyberark_property_name:
-                                            child_existing_account_value
+                                            child_cyberark_property_name: child_existing_account_value
                                         }
                                     )
                                 elif (
@@ -554,8 +547,7 @@ def update_account(module, existing_account):
                                     # Updating a property
                                     replacing.update(
                                         {
-                                            child_cyberark_property_name:
-                                            child_module_parm_value
+                                            child_cyberark_property_name: child_module_parm_value
                                         }
                                     )
                             elif (
@@ -565,13 +557,12 @@ def update_account(module, existing_account):
                                 # Adding a property value
                                 adding.update(
                                     {
-                                        child_cyberark_property_name:
-                                        child_module_parm_value
+                                        child_cyberark_property_name: child_module_parm_value
                                     }
                                 )
                             logging.debug(
-                                "parameter_name=%s  value=%s existing=%s"%
-                                (
+                                "parameter_name=%s  value=%s existing=%s"
+                                % (
                                     path_value,
                                     child_module_parm_value,
                                     child_existing_account_value,
@@ -606,13 +597,9 @@ def update_account(module, existing_account):
                     if existing_account_value is not None:
                         if module_parm_value == removal_value:
                             payload["Operations"].append(
-                                {"op": "remove", "path": "/%s" %
-                                    cyberark_property_name}
+                                {"op": "remove", "path": "/%s" % cyberark_property_name}
                             )
-                        elif not equal_value(
-                            existing_account_value,
-                            module_parm_value
-                        ):
+                        elif not equal_value(existing_account_value, module_parm_value):
                             # Updating a property
                             payload["Operations"].append(
                                 {
@@ -631,11 +618,8 @@ def update_account(module, existing_account):
                             }
                         )
                     logging.debug(
-                        "parameter_name=%s  value=%s existing=%s"%
-                        (
-                            parameter_name, module_parm_value,
-                            existing_account_value
-                        )
+                        "parameter_name=%s  value=%s existing=%s"
+                        % (parameter_name, module_parm_value, existing_account_value)
                     )
 
     if len(payload["Operations"]) != 0:
@@ -651,7 +635,7 @@ def update_account(module, existing_account):
             logging.debug(
                 "Processing invidual operations (%d) => %s",
                 len(payload["Operations"]),
-                json.dumps(payload)
+                json.dumps(payload),
             )
             for operation in payload["Operations"]:
                 individual_payload = [operation]
@@ -696,10 +680,7 @@ def update_account(module, existing_account):
                         msg=(
                             "Unknown error while performing update_account."
                             "\n*** end_point=%s%s\n%s"
-                            % (
-                                api_base_url, end_point,
-                                to_text(unknown_exception)
-                            )
+                            % (api_base_url, end_point, to_text(unknown_exception))
                         ),
                         payload=individual_payload,
                         headers=headers,
@@ -735,21 +716,19 @@ def add_account(module):
             and module.params[parameter_name] is not None
         ):
             cyberark_property_name = referenced_value(
-                parameter_name,
-                cyberark_reference_fieldnames,
-                default=parameter_name
+                parameter_name, cyberark_reference_fieldnames, default=parameter_name
             )
             if isinstance(module.params[parameter_name], dict):
                 payload[cyberark_property_name] = {}
                 for dict_key in list(module.params[parameter_name].keys()):
                     cyberark_child_property_name = referenced_value(
-                        dict_key,
-                        cyberark_reference_fieldnames,
-                        default=dict_key
+                        dict_key, cyberark_reference_fieldnames, default=dict_key
                     )
                     logging.debug(
-                        ("parameter_name =%s.%s cyberark_property_name=%s "
-                         "cyberark_child_property_name=%s"),
+                        (
+                            "parameter_name =%s.%s cyberark_property_name=%s "
+                            "cyberark_child_property_name=%s"
+                        ),
                         parameter_name,
                         dict_key,
                         cyberark_property_name,
@@ -763,10 +742,7 @@ def add_account(module):
                         payload[cyberark_property_name][
                             cyberark_child_property_name
                         ] = deep_get(
-                            module.params[parameter_name],
-                            dict_key,
-                            _empty,
-                            False
+                            module.params[parameter_name], dict_key, _empty, False
                         )
             else:
                 if parameter_name not in cyberark_reference_fieldnames:
@@ -825,11 +801,7 @@ def add_account(module):
             msg=(
                 "Error while performing add_account."
                 "Please validate parameters provided."
-                "\n*** end_point=%s%s\n ==> %s" % (
-                    api_base_url,
-                    end_point,
-                    res
-                )
+                "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
             ),
             payload=payload,
             headers=headers,
@@ -896,11 +868,7 @@ def delete_account(module, existing_account):
                 msg=(
                     "Error while performing delete_account."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s" % (
-                        api_base_url,
-                        end_point,
-                        res
-                    )
+                    "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
                 ),
                 headers=headers,
                 status_code=http_exception.code,
@@ -927,18 +895,13 @@ def reset_account_if_needed(module, existing_account):
 
     # Credential changes
     management_action = deep_get(
-        module.params,
-        "secret_management.management_action",
-        "NOT_FOUND",
-        False
+        module.params, "secret_management.management_action", "NOT_FOUND", False
     )
     cpm_new_secret = deep_get(
         module.params, "secret_management.new_secret", "NOT_FOUND", False
     )
     logging.debug(
-        "management_action: %s  cpm_new_secret: %s",
-        management_action,
-        cpm_new_secret
+        "management_action: %s  cpm_new_secret: %s", management_action, cpm_new_secret
     )
 
     # Prepare result, end_point, and headers
@@ -966,9 +929,7 @@ def reset_account_if_needed(module, existing_account):
         cpm_new_secret == "NOT_FOUND" or cpm_new_secret is None
     ):
         logging.debug("CPM change_immediately with random secret")
-        end_point = (
-            "/PasswordVault/API/Accounts/%s/Change"
-        ) % existing_account_id
+        end_point = ("/PasswordVault/API/Accounts/%s/Change") % existing_account_id
         payload["ChangeEntireGroup"] = True
     elif management_action == "change_immediately" and (
         cpm_new_secret is not None and cpm_new_secret != "NOT_FOUND"
@@ -981,9 +942,7 @@ def reset_account_if_needed(module, existing_account):
         payload["NewCredentials"] = cpm_new_secret
     elif management_action == "reconcile":
         logging.debug("CPM reconcile secret")
-        end_point = (
-            "/PasswordVault/API/Accounts/%s/Reconcile"
-        ) % existing_account_id
+        end_point = ("/PasswordVault/API/Accounts/%s/Reconcile") % existing_account_id
     elif (
         "new_secret" in list(module.params.keys())
         and module.params["new_secret"] is not None
@@ -1033,7 +992,8 @@ def reset_account_if_needed(module, existing_account):
                         "Error while performing reset_account."
                         "Please validate parameters provided."
                         "\n*** end_point=%s%s\n ==> %s"
-                    ) % (api_base_url, end_point, res),
+                    )
+                    % (api_base_url, end_point, res),
                     headers=headers,
                     payload=payload,
                     status_code=http_exception.code,
@@ -1057,9 +1017,7 @@ def reset_account_if_needed(module, existing_account):
 
 
 def referenced_value(field, dct, keys=None, default=None):
-    return dct[field] if field in (
-        keys if keys is not None else dct
-    ) else default
+    return dct[field] if field in (keys if keys is not None else dct) else default
 
 
 def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
@@ -1079,7 +1037,7 @@ def deep_get(dct, dotted_path, default=_empty, use_reference_table=True):
                 "keys=%s key_field=>%s   key=>%s",
                 ",".join(list(result_dct.keys())),
                 key_field,
-                key
+                key,
             )
             result_dct = (
                 result_dct[key_field]
@@ -1130,9 +1088,7 @@ def get_account(module):
             urllib.parse.quote(search_string.lstrip()),
         )
     elif search_string is not None:
-        end_point = (
-            "/PasswordVault/api/accounts?search=%s"
-        ) % (search_string.lstrip())
+        end_point = ("/PasswordVault/api/accounts?search=%s") % (search_string.lstrip())
     else:
         end_point = "/PasswordVault/api/accounts?filter=%s" % (safe_filter)
 
@@ -1165,11 +1121,7 @@ def get_account(module):
                 logging.debug("Acct Record => %s", json.dumps(account_record))
                 found = False
                 for field in identified_by_fields:
-                    record_field_value = deep_get(
-                        account_record,
-                        field,
-                        "NOT FOUND"
-                    )
+                    record_field_value = deep_get(account_record, field, "NOT FOUND")
                     logging.debug(
                         (
                             "Comparing field %s | record_field_name=%s  "
@@ -1178,19 +1130,11 @@ def get_account(module):
                         field,
                         field,
                         record_field_value,
-                        deep_get(module.params, field, "NOT FOUND")
+                        deep_get(module.params, field, "NOT FOUND"),
                     )
-                    if (
-                        record_field_value != "NOT FOUND"
-                        and (
-                            record_field_value
-                            == deep_get(
-                                module.params,
-                                field,
-                                "NOT FOUND",
-                                False
-                            )
-                        )
+                    if record_field_value != "NOT FOUND" and (
+                        record_field_value
+                        == deep_get(module.params, field, "NOT FOUND", False)
                     ):
                         found = True
                     else:
@@ -1204,14 +1148,15 @@ def get_account(module):
             logging.debug(
                 "How Many: %d  First Record Found => %s",
                 how_many,
-                json.dumps(first_record_found)
+                json.dumps(first_record_found),
             )
             if how_many > 1:  # too many records found
                 module.fail_json(
                     msg=(
                         "Error while performing get_account. "
                         "Too many rows (%d) found matching your criteria!"
-                    ) % how_many
+                    )
+                    % how_many
                 )
             else:
                 return (how_many == 1, first_record_found, response.getcode())
@@ -1253,14 +1198,8 @@ def main():
             "choices": ["present", "absent"],
             "default": "present",
         },
-        "logging_level": {
-            "type": "str",
-            "choices": ["NOTSET", "DEBUG", "INFO"]
-        },
-        "logging_file": {
-            "type": "str",
-            "default": "/tmp/ansible_cyberark.log"
-        },
+        "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
+        "logging_file": {"type": "str", "default": "/tmp/ansible_cyberark.log"},
         "api_base_url": {"type": "str"},
         "validate_certs": {"type": "bool", "default": "true"},
         "cyberark_session": {"required": True, "type": "dict", "no_log": True},
@@ -1315,8 +1254,7 @@ def main():
 
     if module.params["logging_level"] is not None:
         logging.basicConfig(
-            filename=module.params["logging_file"],
-            level=module.params["logging_level"]
+            filename=module.params["logging_file"], level=module.params["logging_level"]
         )
 
     logging.info("Starting Module")
@@ -1325,9 +1263,7 @@ def main():
 
     (found, account_record, status_code) = get_account(module)
     logging.debug(
-        "Account was %s, status_code=%s",
-        "FOUND" if found else "NOT FOUND",
-        status_code
+        "Account was %s, status_code=%s", "FOUND" if found else "NOT FOUND", status_code
     )
 
     changed = False
@@ -1336,34 +1272,26 @@ def main():
     if state == "present":
 
         if found:  # Account already exists
-            (changed, result, status_code) = update_account(
-                module,
-                account_record
-            )
+            (changed, result, status_code) = update_account(module, account_record)
         else:  # Account does not exist
             (changed, result, status_code) = add_account(module)
 
         perform_management_action = "always"
         if "secret_management" in list(module.params.keys()):
             secret_management = module.params["secret_management"]
-            if (
-                secret_management is not None
-                and "perform_management_action" in list(secret_management.keys())
+            if secret_management is not None and "perform_management_action" in list(
+                secret_management.keys()
             ):
                 perform_management_action = secret_management[
                     "perform_management_action"
                 ]
 
         logging.debug("Result=>%s", json.dumps(result))
-        if (
-            perform_management_action == "always"
-            or (
-                perform_management_action == "on_create" and not found
-            )
+        if perform_management_action == "always" or (
+            perform_management_action == "on_create" and not found
         ):
             (account_reset, no_result, no_status_code) = reset_account_if_needed(
-                module,
-                result["result"]
+                module, result["result"]
             )
             if account_reset:
                 changed = True

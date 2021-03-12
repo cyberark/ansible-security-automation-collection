@@ -4,7 +4,6 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -227,9 +226,7 @@ def retrieve_credential(module):
     query = module.params["query"]
     connection_timeout = module.params["connection_timeout"]
     query_format = module.params["query_format"]
-    fail_request_on_password_change = module.params[
-        "fail_request_on_password_change"
-    ]
+    fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
 
@@ -298,10 +295,8 @@ def retrieve_credential(module):
             result = json.loads(response.read())
         except Exception as exc:
             module.fail_json(
-                msg=(
-                    "Error obtain cyberark credential result "
-                    "from http body\n%s"
-                ) % (to_text(exc)),
+                msg=("Error obtain cyberark credential result " "from http body\n%s")
+                % (to_text(exc)),
                 status_code=-1,
             )
 
@@ -318,11 +313,7 @@ def main():
         "app_id": {"required": True, "type": "str"},
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},
-        "connection_timeout": {
-            "required": False,
-            "type": "int",
-            "default": 30
-        },
+        "connection_timeout": {"required": False, "type": "int", "default": 30},
         "query_format": {
             "required": False,
             "type": "str",

@@ -4,7 +4,6 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-
 __metaclass__ = type
 
 ANSIBLE_METADATA = {
@@ -13,7 +12,7 @@ ANSIBLE_METADATA = {
     "supported_by": "certified",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: cyberark_authentication
 short_description: CyberArk Authentication using PAS Web Services SDK.
@@ -92,9 +91,9 @@ options:
               different values to perform actions on a logged-on CyberArk
               session.
         type: dict
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Logon - use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
@@ -111,9 +110,9 @@ EXAMPLES = '''
   cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}"
-'''
+"""
 
-RETURN = '''
+RETURN = """
 cyberark_session:
     description: Authentication facts.
     returned: success
@@ -140,7 +139,7 @@ cyberark_session:
             description: Whether or not SSL certificates should be validated.
             type: bool
             returned: always
-'''
+"""
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
@@ -174,7 +173,7 @@ def processAuthentication(module):
     state = module.params["state"]
     cyberark_session = module.params["cyberark_session"]
 
-    concurrentSessions = module.params['concurrentSessions']
+    concurrentSessions = module.params["concurrentSessions"]
 
     # if in check mode it will not perform password changes
     if module.check_mode and new_password is not None:
@@ -182,7 +181,7 @@ def processAuthentication(module):
 
     # Defining initial values for open_url call
     headers = {"Content-Type": "application/json"}
-    
+
     payload = ""
 
     if state == "present":  # Logon Action
@@ -190,22 +189,21 @@ def processAuthentication(module):
         # Different end_points based on the use of desired method of auth
 
         if use_ldap:
-            end_point = '/PasswordVault/API/Auth/LDAP/Logon'
+            end_point = "/PasswordVault/API/Auth/LDAP/Logon"
 
         elif use_radius:
-            end_point = '/PasswordVault/API/Auth/radius/Logon'
+            end_point = "/PasswordVault/API/Auth/radius/Logon"
 
         elif use_windows:
-            end_point = '/PasswordVault/API/auth/Windows/Logon'
+            end_point = "/PasswordVault/API/auth/Windows/Logon"
 
         else:
             use_cyberark = True
-            end_point = '/PasswordVault/API/Auth/CyberArk/Logon'
+            end_point = "/PasswordVault/API/Auth/CyberArk/Logon"
 
             # The payload will contain username, password
             # and optionally use_radius_authentication and new_password
             payload_dict = {"username": username, "password": password}
-                
 
         if new_password is not None and use_cyberark:
             payload_dict["newPassword"] = new_password
@@ -215,7 +213,7 @@ def processAuthentication(module):
         #     payload_dict["connectionNumber"] = connection_number
 
         if concurrentSessions == True:
-            payload_dict['concurrentSessions'] = True
+            payload_dict["concurrentSessions"] = True
 
         payload = json.dumps(payload_dict)
 
@@ -227,8 +225,8 @@ def processAuthentication(module):
 
         headers["Authorization"] = cyberark_session["token"]
 
-        # All off the logoff with the same endpoint  
-        end_point = '/PasswordVault/API/Auth/Logoff'
+        # All off the logoff with the same endpoint
+        end_point = "/PasswordVault/API/Auth/Logoff"
 
     result = None
     changed = False
@@ -251,7 +249,8 @@ def processAuthentication(module):
                 "Error while performing authentication."
                 "Please validate parameters provided, and ability to logon to "
                 "CyberArk.\n*** end_point=%s%s\n ==> %s"
-            ) % (api_base_url, end_point, to_text(http_exception)),
+            )
+            % (api_base_url, end_point, to_text(http_exception)),
             payload=payload,
             headers=headers,
             status_code=http_exception.code,
@@ -276,7 +275,7 @@ def processAuthentication(module):
 
             # Result token from REST Api uses a different key based
             # the use of shared logon authentication
-            token = ''
+            token = ""
             try:
                 token = str(json.loads(response.read()))
 
@@ -298,7 +297,7 @@ def processAuthentication(module):
                 "cyberark_session": {
                     "token": token,
                     "api_base_url": api_base_url,
-                    "validate_certs": validate_certs
+                    "validate_certs": validate_certs,
                 }
             }
 
@@ -314,13 +313,10 @@ def processAuthentication(module):
         return (changed, result, response.getcode())
 
     else:
-        module.fail_json(
-            msg="error in end_point=>" + end_point, headers=headers
-        )
+        module.fail_json(msg="error in end_point=>" + end_point, headers=headers)
 
 
 def main():
-
 
     fields = {
         "api_base_url": {"type": "str"},
@@ -328,31 +324,31 @@ def main():
         "username": {"type": "str"},
         "password": {"type": "str", "no_log": True},
         "new_password": {"type": "str", "no_log": True},
-
         "use_radius_authentication": {"default": False, "type": "bool"},
         "use_windows_authentication": {"default": False, "type": "bool"},
         "use_ldap_authentication": {"default": False, "type": "bool"},
         "use_cyberark_authentication": {"default": False, "type": "bool"},
-
         "concurrentSessions": {"default": False, "type": "bool"},
-        
         "connection_number": {"type": "int"},
         "state": {
             "type": "str",
             "choices": ["present", "absent"],
             "default": "present",
         },
-
         "cyberark_session": {"type": "dict"},
     }
 
-# cyberark and radius -> mutually_exclusive is cyberark and ldap
-# ldap and radius 
-# windows has to be by itself
-
+    # cyberark and radius -> mutually_exclusive is cyberark and ldap
+    # ldap and radius
+    # windows has to be by itself
 
     mutually_exclusive = [
-        ["use_windows_authentication","use_ldap_authentication","use_cyberark_authentication","use_radius_authentication"],
+        [
+            "use_windows_authentication",
+            "use_ldap_authentication",
+            "use_cyberark_authentication",
+            "use_radius_authentication",
+        ],
         ["use_radius_authentication", "new_password"],
         ["use_windows_authentication", "new_password"],
         ["use_ldap_authentication", "new_password"],
@@ -376,11 +372,7 @@ def main():
 
     (changed, result, status_code) = processAuthentication(module)
 
-    module.exit_json(
-        changed=changed,
-        ansible_facts=result,
-        status_code=status_code
-    )
+    module.exit_json(changed=changed, ansible_facts=result, status_code=status_code)
 
 
 if __name__ == "__main__":
