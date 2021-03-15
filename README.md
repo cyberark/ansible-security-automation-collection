@@ -54,6 +54,6 @@ None.
 #### Author Information
 - CyberArk Business Development Technical Team 
     - @enunez-cyberark
-    - @cyberark-bizdev
+    - @eemotacyber
     - @jimmyjamcabd
 
