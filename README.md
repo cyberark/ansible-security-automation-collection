@@ -51,6 +51,10 @@ None.
 - Using AAM Central Credential Provider (CCP), to securely retreive secrets and account properties from EPV to be registered for use in playbooks<br>
 [Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_credential.md)
 
+#### Python3
+
+- The modules were updated to be in python 3, for python 2 refer to the following commit: f47f6708c40411368f2bfe8245fcb7514867e0e9
+
 #### Author Information
 - CyberArk Business Development Technical Team 
     - @enunez-cyberark
