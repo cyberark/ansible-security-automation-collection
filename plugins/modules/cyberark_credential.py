@@ -3,7 +3,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -211,7 +210,7 @@ from ansible.module_utils.six.moves.urllib.parse import quote
 import json
 
 try:
-    import httplib
+    import http.client
 except ImportError:
     # Python 3
     import http.client as httplib
@@ -227,9 +226,7 @@ def retrieve_credential(module):
     query = module.params["query"]
     connection_timeout = module.params["connection_timeout"]
     query_format = module.params["query_format"]
-    fail_request_on_password_change = module.params[
-        "fail_request_on_password_change"
-    ]
+    fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
 
@@ -267,7 +264,7 @@ def retrieve_credential(module):
             client_key=client_key,
         )
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (HTTPError, http.client.HTTPException) as http_exception:
 
         module.fail_json(
             msg=(
@@ -298,10 +295,8 @@ def retrieve_credential(module):
             result = json.loads(response.read())
         except Exception as exc:
             module.fail_json(
-                msg=(
-                    "Error obtain cyberark credential result "
-                    "from http body\n%s"
-                ) % (to_text(exc)),
+                msg=("Error obtain cyberark credential result " "from http body\n%s")
+                % (to_text(exc)),
                 status_code=-1,
             )
 
@@ -318,11 +313,7 @@ def main():
         "app_id": {"required": True, "type": "str"},
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},
-        "connection_timeout": {
-            "required": False,
-            "type": "int",
-            "default": 30
-        },
+        "connection_timeout": {"required": False, "type": "int", "default": 30},
         "query_format": {
             "required": False,
             "type": "str",

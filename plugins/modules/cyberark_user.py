@@ -5,7 +5,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -179,7 +178,7 @@ from ansible.module_utils.six.moves import http_client as httplib
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.urls import open_url
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 
 def user_details(module):
@@ -193,9 +192,8 @@ def user_details(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(
-        username
-    )
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
 
@@ -261,10 +259,10 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     # for POST -- create -- payload contains username
     # for PUT -- update -- username is part of the endpoint
     if HTTPMethod == "POST":
-        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users"
+        end_point = "PasswordVault/api/Users"
         payload["UserName"] = username
         if (
-            "initial_password" in module.params.keys()
+            "initial_password" in list(module.params.keys())
             and module.params["initial_password"] is not None
         ):
             payload["InitialPassword"] = module.params["initial_password"]
@@ -274,19 +272,13 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         end_point = end_point.format(username)
 
     # --- Optionally populate payload based on parameters passed ---
-    if (
-        "new_password" in module.params
-        and module.params["new_password"] is not None
-    ):
+    if "new_password" in module.params and module.params["new_password"] is not None:
         payload["NewPassword"] = module.params["new_password"]
 
     if "email" in module.params and module.params["email"] is not None:
         payload["Email"] = module.params["email"]
 
-    if (
-        "first_name" in module.params
-        and module.params["first_name"] is not None
-    ):
+    if "first_name" in module.params and module.params["first_name"] is not None:
         payload["FirstName"] = module.params["first_name"]
 
     if "last_name" in module.params and module.params["last_name"] is not None:
@@ -300,10 +292,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             "change_password_on_the_next_logon"
         ]
 
-    if (
-        "expiry_date" in module.params
-        and module.params["expiry_date"] is not None
-    ):
+    if "expiry_date" in module.params and module.params["expiry_date"] is not None:
         payload["ExpiryDate"] = module.params["expiry_date"]
 
     if (
@@ -320,17 +309,13 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     # --------------------------------------------------------------
     logging.debug(
-        "HTTPMethod = "
-        + HTTPMethod
-        + " module.params = "
-        + json.dumps(module.params)
+        "HTTPMethod = " + HTTPMethod + " module.params = " + json.dumps(module.params)
     )
     logging.debug("Existing Info: %s", json.dumps(existing_info))
     logging.debug("payload => %s", json.dumps(payload))
 
     if HTTPMethod == "PUT" and (
-        "new_password" not in module.params
-        or module.params["new_password"] is None
+        "new_password" not in module.params or module.params["new_password"] is None
     ):
         logging.info("Verifying if needs to be updated")
         proceed = False
@@ -413,9 +398,7 @@ def user_delete(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc/Users/{0}"
-    ).format(username)
+    end_point = ("PasswordVault/api/Users/{0}").format(username)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -470,23 +453,35 @@ def user_add_to_group(module):
 
     # Get username, and groupname from module parameters, and api base url
     # along with validate_certs from the cyberark_session established
+
+    # Not needed for new version
     username = module.params["username"]
-    group_name = module.params["group_name"]
+    # group_name = module.params["group_name"]
+    vault_id = module.params["vault_id"]
+    member_id = username
+    member_type = (
+        "Vault"
+        if module.params["member_type"] is None
+        else module.params["member_type"]
+    )
+    domain_name = module.params["domain_name"] if member_type == "domain" else None
+
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
 
     # Prepare result, end_point, headers and payload
     result = {}
-    end_point = (
-        "/PasswordVault/WebServices/PIMServices.svc/Groups/{0}/Users"
-    ).format(
-        urllib.quote(group_name)
+    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(
+        urllib.parse.quote(vault_id)
     )
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
-    payload = {"UserName": username}
+    # payload = {"UserName": username}
+    payload = {"memberId": member_id, "memberType": member_type}
+    if domain_name:
+        payload["domain_name"] = domain_name
 
     try:
 
@@ -541,15 +536,9 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             username=dict(type="str", required=True),
-            state=dict(
-                type="str",
-                default="present",
-                choices=["absent", "present"]
-            ),
+            state=dict(type="str", default="present", choices=["absent", "present"]),
             logging_level=dict(
-                type="str",
-                default="NOTSET",
-                choices=["NOTSET", "DEBUG", "INFO"]
+                type="str", default="NOTSET", choices=["NOTSET", "DEBUG", "INFO"]
             ),
             logging_file=dict(type="str", default="/tmp/ansible_cyberark.log"),
             cyberark_session=dict(type="dict", required=True),
@@ -564,13 +553,15 @@ def main():
             disabled=dict(type="bool"),
             location=dict(type="str"),
             group_name=dict(type="str"),
+            vault_id=dict(type="str"),
+            member_type=dict(type="str"),
+            domain_name=dict(type="str"),
         )
     )
 
     if module.params["logging_level"] is not None:
         logging.basicConfig(
-            filename=module.params["logging_file"],
-            level=module.params["logging_level"]
+            filename=module.params["logging_file"], level=module.params["logging_level"]
         )
 
     logging.info("Starting Module")
@@ -595,11 +586,7 @@ def main():
 
         elif status_code == 404:
             # User does not exist, proceed to create it
-            (changed, result, status_code) = user_add_or_update(
-                module,
-                "POST",
-                None
-            )
+            (changed, result, status_code) = user_add_or_update(module, "POST", None)
 
             if status_code == 201 and group_name is not None:
                 # If user was created, add to group if needed
@@ -608,11 +595,7 @@ def main():
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)
 
-    module.exit_json(
-        changed=changed,
-        cyberark_user=result,
-        status_code=status_code
-    )
+    module.exit_json(changed=changed, cyberark_user=result, status_code=status_code)
 
 
 if __name__ == "__main__":

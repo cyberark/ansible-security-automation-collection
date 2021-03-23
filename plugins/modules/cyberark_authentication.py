@@ -3,7 +3,6 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -13,14 +12,14 @@ ANSIBLE_METADATA = {
     "supported_by": "certified",
 }
 
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: cyberark_authentication
 short_description: CyberArk Authentication using PAS Web Services SDK.
 author:
     - Edward Nunez (@enunez-cyberark) CyberArk BizDev
     - Cyberark Bizdev (@cyberark-bizdev)
-    - Erasmo Acosta (@erasmix)
+    - Edgar Mota
 version_added: 2.4
 description:
     - Authenticates to CyberArk Vault using Privileged Account Security
@@ -60,11 +59,21 @@ options:
             - If C(false), SSL certificates will not be validated.  This
               should only set to C(false) used on personally controlled
               sites using self-signed certificates.
-    use_shared_logon_authentication:
+    use_ldap_authentication:
         type: bool
         default: 'no'
         description:
-            - Whether or not Shared Logon Authentication will be used.
+            - Whether or not LDAP will be used.
+    use_windows_authentication:
+        type: bool
+        default: 'no'
+        description:
+            - Whether or not Windows will be used.
+    use_cyberark_authentication:
+        type: bool
+        default: 'no'
+        description:
+            - Whether or not LDAP will be used.
     use_radius_authentication:
         type: bool
         default: 'no'
@@ -82,9 +91,9 @@ options:
               different values to perform actions on a logged-on CyberArk
               session.
         type: dict
-'''
+"""
 
-EXAMPLES = '''
+EXAMPLES = """
 - name: Logon - use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
@@ -101,9 +110,9 @@ EXAMPLES = '''
   cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}"
-'''
+"""
 
-RETURN = '''
+RETURN = """
 cyberark_session:
     description: Authentication facts.
     returned: success
@@ -130,7 +139,7 @@ cyberark_session:
             description: Whether or not SSL certificates should be validated.
             type: bool
             returned: always
-'''
+"""
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
@@ -139,7 +148,7 @@ from ansible.module_utils.six.moves.urllib.error import HTTPError
 import json
 
 try:
-    import httplib
+    import http.client
 except ImportError:
     # Python 3
     import http.client as httplib
@@ -154,13 +163,17 @@ def processAuthentication(module):
     username = module.params["username"]
     password = module.params["password"]
     new_password = module.params["new_password"]
-    use_shared_logon = module.params[
-        "use_shared_logon_authentication"
-    ]
+
     use_radius = module.params["use_radius_authentication"]
+    use_ldap = module.params["use_ldap_authentication"]
+    use_windows = module.params["use_windows_authentication"]
+    use_cyberark = module.params["use_cyberark_authentication"]
+
     connection_number = module.params["connection_number"]
     state = module.params["state"]
     cyberark_session = module.params["cyberark_session"]
+
+    concurrentSessions = module.params["concurrentSessions"]
 
     # if in check mode it will not perform password changes
     if module.check_mode and new_password is not None:
@@ -168,53 +181,52 @@ def processAuthentication(module):
 
     # Defining initial values for open_url call
     headers = {"Content-Type": "application/json"}
+
     payload = ""
 
     if state == "present":  # Logon Action
 
-        # Different end_points based on the use of shared logon authentication
-        if use_shared_logon:
+        # Different end_points based on the use of desired method of auth
 
-            end_point = ("/PasswordVault/WebServices/auth/Shared"
-                         "/RestfulAuthenticationService.svc/Logon")
+        if use_ldap:
+            end_point = "/PasswordVault/API/Auth/LDAP/Logon"
+
+        elif use_radius:
+            end_point = "/PasswordVault/API/Auth/radius/Logon"
+
+        elif use_windows:
+            end_point = "/PasswordVault/API/auth/Windows/Logon"
 
         else:
-
-            end_point = ("/PasswordVault/WebServices/auth/Cyberark"
-                         "/CyberArkAuthenticationService.svc/Logon")
+            use_cyberark = True
+            end_point = "/PasswordVault/API/Auth/CyberArk/Logon"
 
             # The payload will contain username, password
             # and optionally use_radius_authentication and new_password
             payload_dict = {"username": username, "password": password}
 
-            if use_radius:
-                payload_dict["useRadiusAuthentication"] = use_radius
+        if new_password is not None and use_cyberark:
+            payload_dict["newPassword"] = new_password
 
-            if new_password is not None:
-                payload_dict["newPassword"] = new_password
+        # COMMENT: I dont know what this is for and the old api seems like it didnt have this field
+        # if connection_number is not None:
+        #     payload_dict["connectionNumber"] = connection_number
 
-            if connection_number is not None:
-                payload_dict["connectionNumber"] = connection_number
+        if concurrentSessions == True:
+            payload_dict["concurrentSessions"] = True
 
-            payload = json.dumps(payload_dict)
+        payload = json.dumps(payload_dict)
 
     else:  # Logoff Action
 
         # Get values from cyberark_session already established
         api_base_url = cyberark_session["api_base_url"]
         validate_certs = cyberark_session["validate_certs"]
-        use_shared_logon = cyberark_session[
-            "use_shared_logon_authentication"
-        ]
+
         headers["Authorization"] = cyberark_session["token"]
 
-        # Different end_points based on the use of shared logon authentication
-        if use_shared_logon:
-            end_point = ("/PasswordVault/WebServices/auth/Shared"
-                         "/RestfulAuthenticationService.svc/Logoff")
-        else:
-            end_point = ("/PasswordVault/WebServices/auth/Cyberark"
-                         "/CyberArkAuthenticationService.svc/Logoff")
+        # All off the logoff with the same endpoint
+        end_point = "/PasswordVault/API/Auth/Logoff"
 
     result = None
     changed = False
@@ -230,14 +242,15 @@ def processAuthentication(module):
             validate_certs=validate_certs,
         )
 
-    except (HTTPError, httplib.HTTPException) as http_exception:
+    except (HTTPError, http.client.HTTPException) as http_exception:
 
         module.fail_json(
             msg=(
                 "Error while performing authentication."
                 "Please validate parameters provided, and ability to logon to "
                 "CyberArk.\n*** end_point=%s%s\n ==> %s"
-            ) % (api_base_url, end_point, to_text(http_exception)),
+            )
+            % (api_base_url, end_point, to_text(http_exception)),
             payload=payload,
             headers=headers,
             status_code=http_exception.code,
@@ -262,12 +275,15 @@ def processAuthentication(module):
 
             # Result token from REST Api uses a different key based
             # the use of shared logon authentication
-            token = None
+            token = ""
             try:
-                if use_shared_logon:
-                    token = json.loads(response.read())["LogonResult"]
-                else:
-                    token = json.loads(response.read())["CyberArkLogonResult"]
+                token = str(json.loads(response.read()))
+
+                # the new one just returns a token
+                # if use:
+                #     token = json.loads(response.read())["LogonResult"]
+                # else:
+                #     token = json.loads(response.read())["CyberArkLogonResult"]
             except Exception as e:
                 module.fail_json(
                     msg="Error obtaining token\n%s" % (to_text(e)),
@@ -282,7 +298,6 @@ def processAuthentication(module):
                     "token": token,
                     "api_base_url": api_base_url,
                     "validate_certs": validate_certs,
-                    "use_shared_logon_authentication": use_shared_logon,
                 }
             }
 
@@ -298,9 +313,7 @@ def processAuthentication(module):
         return (changed, result, response.getcode())
 
     else:
-        module.fail_json(
-            msg="error in end_point=>" + end_point, headers=headers
-        )
+        module.fail_json(msg="error in end_point=>" + end_point, headers=headers)
 
 
 def main():
@@ -311,8 +324,11 @@ def main():
         "username": {"type": "str"},
         "password": {"type": "str", "no_log": True},
         "new_password": {"type": "str", "no_log": True},
-        "use_shared_logon_authentication": {"default": False, "type": "bool"},
         "use_radius_authentication": {"default": False, "type": "bool"},
+        "use_windows_authentication": {"default": False, "type": "bool"},
+        "use_ldap_authentication": {"default": False, "type": "bool"},
+        "use_cyberark_authentication": {"default": False, "type": "bool"},
+        "concurrentSessions": {"default": False, "type": "bool"},
         "connection_number": {"type": "int"},
         "state": {
             "type": "str",
@@ -322,11 +338,21 @@ def main():
         "cyberark_session": {"type": "dict"},
     }
 
+    # cyberark and radius -> mutually_exclusive is cyberark and ldap
+    # ldap and radius
+    # windows has to be by itself
+
     mutually_exclusive = [
-        ["use_shared_logon_authentication", "use_radius_authentication"],
-        ["use_shared_logon_authentication", "new_password"],
+        [
+            "use_windows_authentication",
+            "use_ldap_authentication",
+            "use_cyberark_authentication",
+            "use_radius_authentication",
+        ],
+        ["use_radius_authentication", "new_password"],
+        ["use_windows_authentication", "new_password"],
+        ["use_ldap_authentication", "new_password"],
         ["api_base_url", "cyberark_session"],
-        ["cyberark_session", "username", "use_shared_logon_authentication"],
     ]
 
     required_if = [
@@ -346,11 +372,7 @@ def main():
 
     (changed, result, status_code) = processAuthentication(module)
 
-    module.exit_json(
-        changed=changed,
-        ansible_facts=result,
-        status_code=status_code
-    )
+    module.exit_json(changed=changed, ansible_facts=result, status_code=status_code)
 
 
 if __name__ == "__main__":
