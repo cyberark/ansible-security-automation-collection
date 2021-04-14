@@ -53,7 +53,7 @@ None.
 
 #### Python3
 
-- The modules were updated to be in python 3, for python 2 refer to the following commit: f47f6708c40411368f2bfe8245fcb7514867e0e9
+- The modules will work with either python2 or python3.
 
 #### Author Information
 - CyberArk Business Development Technical Team 

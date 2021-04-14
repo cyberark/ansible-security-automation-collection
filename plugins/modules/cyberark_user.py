@@ -177,8 +177,8 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.six.moves import http_client as httplib
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.urls import open_url
+from ansible.module_utils.six.moves.urllib.parse import quote
 import logging
-import urllib.request, urllib.parse, urllib.error
 
 
 def user_details(module):
@@ -472,9 +472,7 @@ def user_add_to_group(module):
 
     # Prepare result, end_point, headers and payload
     result = {}
-    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(
-        urllib.parse.quote(vault_id)
-    )
+    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(quote(vault_id))
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
