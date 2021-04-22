@@ -375,15 +375,9 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
-import urllib.request, urllib.parse, urllib.error
-
+from ansible.module_utils.six.moves.urllib.parse import quote
+from ansible.module_utils.six.moves.http_client import HTTPException
 import json
-
-try:
-    import http.client
-except ImportError:
-    # Python 3
-    import http.client as httplib
 import logging
 
 _empty = object()
@@ -655,7 +649,7 @@ def update_account(module, existing_account):
 
                 #                return (True, result, response.getcode())
 
-                except (HTTPError, http.client.HTTPException) as http_exception:
+                except (HTTPError, HTTPException) as http_exception:
 
                     if isinstance(http_exception, HTTPError):
                         res = json.load(http_exception)
@@ -790,7 +784,7 @@ def add_account(module):
 
             return (True, result, response.getcode())
 
-    except (HTTPError, http.client.HTTPException) as http_exception:
+    except (HTTPError, HTTPException) as http_exception:
 
         if isinstance(http_exception, HTTPError):
             res = json.load(http_exception)
@@ -857,7 +851,7 @@ def delete_account(module, existing_account):
 
             return (True, result, response.getcode())
 
-        except (HTTPError, http.client.HTTPException) as http_exception:
+        except (HTTPError, HTTPException) as http_exception:
 
             if isinstance(http_exception, HTTPError):
                 res = json.load(http_exception)
@@ -980,7 +974,7 @@ def reset_account_if_needed(module, existing_account):
 
                 return (True, result, response.getcode())
 
-            except (HTTPError, http.client.HTTPException) as http_exception:
+            except (HTTPError, HTTPException) as http_exception:
 
                 if isinstance(http_exception, HTTPError):
                     res = json.load(http_exception)
@@ -1062,7 +1056,7 @@ def get_account(module):
     identified_by_fields = module.params["identified_by"].split(",")
     logging.debug("Identified_by: %s", json.dumps(identified_by_fields))
     safe_filter = (
-        urllib.parse.quote("safeName eq ") + urllib.parse.quote(module.params["safe"])
+        quote("safeName eq ") + quote(module.params["safe"])
         if "safe" in module.params and module.params["safe"] is not None
         else None
     )
@@ -1085,7 +1079,7 @@ def get_account(module):
     if search_string is not None and safe_filter is not None:
         end_point = "/PasswordVault/api/accounts?filter=%s&search=%s" % (
             safe_filter,
-            urllib.parse.quote(search_string.lstrip()),
+            quote(search_string.lstrip()),
         )
     elif search_string is not None:
         end_point = ("/PasswordVault/api/accounts?search=%s") % (search_string.lstrip())
@@ -1161,7 +1155,7 @@ def get_account(module):
             else:
                 return (how_many == 1, first_record_found, response.getcode())
 
-    except (HTTPError, http.client.HTTPException) as http_exception:
+    except (HTTPError, HTTPException) as http_exception:
 
         if http_exception.code == 404:
             return (False, None, http_exception.code)

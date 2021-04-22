@@ -207,13 +207,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import open_url
 from ansible.module_utils.six.moves.urllib.error import HTTPError
 from ansible.module_utils.six.moves.urllib.parse import quote
+from ansible.module_utils.six.moves.http_client import HTTPException
 import json
-
-try:
-    import http.client
-except ImportError:
-    # Python 3
-    import http.client as httplib
 
 
 def retrieve_credential(module):
@@ -264,7 +259,7 @@ def retrieve_credential(module):
             client_key=client_key,
         )
 
-    except (HTTPError, http.client.HTTPException) as http_exception:
+    except (HTTPError, HTTPException) as http_exception:
 
         module.fail_json(
             msg=(
