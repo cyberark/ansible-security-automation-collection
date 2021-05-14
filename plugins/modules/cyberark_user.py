@@ -117,6 +117,11 @@ options:
         description:
             - The name of the group the user will be added to.
         type: str
+    timeout:
+        description:
+            - How long to wait for the server to send data before giving up
+        type: float
+        default: 10
 """
 
 EXAMPLES = r"""
@@ -204,6 +209,7 @@ def user_details(module):
             method="GET",
             headers=headers,
             validate_certs=validate_certs,
+            timeout=module.params['timeout'],
         )
         result = {"result": json.loads(response.read())}
 
@@ -352,6 +358,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
                 headers=headers,
                 data=json.dumps(payload),
                 validate_certs=validate_certs,
+                timeout=module.params['timeout'],
             )
 
             result = {"result": json.loads(response.read())}
@@ -411,6 +418,7 @@ def user_delete(module):
             method="DELETE",
             headers=headers,
             validate_certs=validate_certs,
+	    timeout=module.params['timeout'],
         )
 
         result = {"result": {}}
@@ -490,6 +498,7 @@ def user_add_to_group(module):
             headers=headers,
             data=json.dumps(payload),
             validate_certs=validate_certs,
+	    timeout=module.params['timeout'],
         )
 
         result = {"result": {}}
@@ -554,6 +563,7 @@ def main():
             vault_id=dict(type="str"),
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
+            timeout=dict(type="float", default=10),
         )
     )
 
@@ -577,18 +587,14 @@ def main():
                 module, "PUT", result["result"]
             )
 
-            if group_name is not None:
-                # If user exists, add to group if needed
-                (changed_group, no_result, no_status_code) = user_add_to_group(module)
-                changed = changed or changed_group
-
         elif status_code == 404:
             # User does not exist, proceed to create it
             (changed, result, status_code) = user_add_or_update(module, "POST", None)
 
-            if status_code == 201 and group_name is not None:
-                # If user was created, add to group if needed
-                (changed, no_result, no_status_code) = user_add_to_group(module)
+        # Add user to group if needed
+        if group_name is not None:
+          (group_change, no_result, no_status_code) = user_add_to_group(module)
+          changed = changed or group_change
 
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)
