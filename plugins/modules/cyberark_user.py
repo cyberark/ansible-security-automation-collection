@@ -116,12 +116,20 @@ options:
     group_name:
         description:
             - The name of the group the user will be added to.
+            - Causes an additional lookup in cyberark
+            - Will be ignored if vault_id is used
+            - Will cause a failure if group is missing or more than one group with that name exists
         type: str
     timeout:
         description:
             - How long to wait for the server to send data before giving up
         type: float
         default: 10
+    vault_id:
+        description:
+            - The ID of the user group to add the user to
+            - Prefered over group_name
+        type: str
 """
 
 EXAMPLES = r"""
@@ -457,6 +465,51 @@ def user_delete(module):
         )
 
 
+def resolve_group_name_to_id(module):
+    group_name = module.params["group_name"]
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": cyberark_session["token"]
+    }
+    url = "{}PasswordVault/api/UserGroups?filter=groupName%20eq{}".format(api_base_url, quote(group_name))
+    try:
+        response = open_url(
+            url,
+            method="GET",
+            headers=headers,
+            validate_certs=validate_certs,
+            timeout=module.params['timeout'],
+        )
+        groups = json.loads(response.read())
+        if len(groups) == 0:
+            module.fail_json(msg=("Unable to find a group named %s" % (group_name)))
+        if len(groups) > 1:
+            module.fail_json(msg=("Found more than one group named %s, please use vault_id parameter instead" % (group_name)))
+        return groups[0]['id']
+
+    except (HTTPError, httplib.HTTPException) as http_exception:
+        module.fail_json(msg=(
+            "Error while looking up group %s.\n*** end_point=%s\n ==> %s"
+            % (group_name, url, to_text(http_exception))
+            ),
+            payload={},
+            headers=headers,
+            status_code=http_exception.code,
+        )
+    except Exception as unknown_exception:
+        module.fail_json(msg=(
+                "Unknown error while looking up group %s.\n*** end_point=%s\n%s"
+                % (group_name, url, to_text(unknown_exception))
+            ),
+            payload={},
+            headers=headers,
+            status_code=-1,
+        )
+
+
 def user_add_to_group(module):
 
     # Get username, and groupname from module parameters, and api base url
@@ -464,7 +517,7 @@ def user_add_to_group(module):
 
     # Not needed for new version
     username = module.params["username"]
-    # group_name = module.params["group_name"]
+    group_name = module.params["group_name"]
     vault_id = module.params["vault_id"]
     member_id = username
     member_type = (
@@ -480,10 +533,18 @@ def user_add_to_group(module):
 
     # Prepare result, end_point, headers and payload
     result = {}
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": cyberark_session["token"]
+    }
+
+    # If we went "old school" and were provided a group_name instead of a vault_id we need to resolve it
+    if group_name and not vault_id:
+        # If we were given a group_name we need to lookup the vault_id
+        vault_id = resolve_group_name_to_id(module)
+
     end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(quote(vault_id))
 
-    headers = {"Content-Type": "application/json"}
-    headers["Authorization"] = cyberark_session["token"]
     # payload = {"UserName": username}
     payload = {"memberId": member_id, "memberType": member_type}
     if domain_name:
@@ -592,7 +653,7 @@ def main():
             (changed, result, status_code) = user_add_or_update(module, "POST", None)
 
         # Add user to group if needed
-        if group_name is not None:
+        if group_name is not None or vault_id is not None:
           (group_change, no_result, no_status_code) = user_add_to_group(module)
           changed = changed or group_change
 
