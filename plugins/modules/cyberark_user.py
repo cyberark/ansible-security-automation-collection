@@ -129,7 +129,7 @@ options:
         description:
             - The ID of the user group to add the user to
             - Prefered over group_name
-        type: str
+        type: int
 """
 
 EXAMPLES = r"""
@@ -549,7 +549,7 @@ def user_add_to_group(module):
         # If we were given a group_name we need to lookup the vault_id
         vault_id = resolve_group_name_to_id(module)
 
-    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(quote(vault_id))
+    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(vault_id)
 
     # payload = {"UserName": username}
     payload = {"memberId": member_id, "memberType": member_type}
@@ -628,7 +628,7 @@ def main():
             disabled=dict(type="bool"),
             location=dict(type="str"),
             group_name=dict(type="str"),
-            vault_id=dict(type="str"),
+            vault_id=dict(type="int"),
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
