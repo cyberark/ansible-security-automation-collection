@@ -34,6 +34,7 @@ options:
         description:
             - The name of the user who will be queried (for details), added,
               updated or deleted.
+            - For deletion, vault_user_id will be prefered.
         type: str
         required: True
     state:
@@ -129,6 +130,11 @@ options:
         description:
             - The ID of the user group to add the user to
             - Prefered over group_name
+        type: int
+    vault_user_id:
+        description:
+            - The ID of the user to delete
+            - Prefered over username
         type: int
 """
 
@@ -407,6 +413,55 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         return (False, existing_info, 200)
 
 
+def resolve_username_to_id(module):
+    username = module.params["username"]
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+    result = {}
+    url = construct_url(api_base_url, "PasswordVault/api/Users?search={}".format(username))
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": cyberark_session["token"],
+    }
+    try:
+        response = open_url(
+            url,
+            method="GET",
+            headers=headers,
+            validate_certs=validate_certs,
+	    timeout=module.params['timeout'],
+        )
+        users = json.loads(response.read())
+        if users['Total'] == 0:
+            # The user does not exist
+            return None
+        elif users['Total'] == 1:
+            return users['Users'][0]['id']
+        else:
+            module.fail_json("Found more than one user matching %s. Use vault_user_id instead" % (username))
+
+    except (HTTPError, httplib.HTTPException) as http_exception:
+        exception_text = to_text(http_exception)
+        module.fail_json(msg=(
+                "Error while performing user_search."
+                "Please validate parameters provided."
+                "\n*** end_point=%s\n ==> %s"
+                % (url, exception_text)
+            ),
+            headers=headers,
+            status_code=http_exception.code,
+        )
+    except Exception as unknown_exception:
+        module.fail_json(msg=(
+                "Unknown error while performing user search."
+                "\n*** end_point=%s\n%s"
+                % (url, to_text(unknown_exception))
+            ),
+            headers=headers,
+            status_code=-1,
+        )
+
 def user_delete(module):
 
     # Get username from module parameters, and api base url
@@ -415,10 +470,17 @@ def user_delete(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    vault_user_id = module.params["vault_user_id"]
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = ("PasswordVault/api/Users/{0}").format(username)
+    if not vault_user_id and username:
+        vault_user_id = resolve_username_to_id(module)
+        # If the user was not found by username we can return unchanged
+        if vault_user_id == None:
+          return (False, result, None)
+
+    end_point = ("PasswordVault/api/Users/{0}").format(vault_user_id)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -629,6 +691,7 @@ def main():
             location=dict(type="str"),
             group_name=dict(type="str"),
             vault_id=dict(type="int"),
+            vault_user_id=dict(type="int"),
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
