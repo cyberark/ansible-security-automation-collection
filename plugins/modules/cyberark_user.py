@@ -480,7 +480,7 @@ def resolve_group_name_to_id(module):
       "Content-Type": "application/json",
       "Authorization": cyberark_session["token"]
     }
-    url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?filter=groupName%20eq{}".format(quote(group_name)))
+    url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?search={}".format(quote(group_name)))
     try:
         response = open_url(
             url,
@@ -490,11 +490,11 @@ def resolve_group_name_to_id(module):
             timeout=module.params['timeout'],
         )
         groups = json.loads(response.read())
-        if len(groups) == 0:
+        if groups['count'] == 0:
             module.fail_json(msg=("Unable to find a group named %s" % (group_name)))
-        if len(groups) > 1:
+        if groups['count'] > 1:
             module.fail_json(msg=("Found more than one group named %s, please use vault_id parameter instead" % (group_name)))
-        return groups[0]['id']
+        return groups['value'][0]['id']
 
     except (HTTPError, httplib.HTTPException) as http_exception:
         module.fail_json(msg=(
