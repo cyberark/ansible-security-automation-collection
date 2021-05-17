@@ -324,6 +324,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         and module.params["user_type_name"] is not None
     ):
         payload["UserTypeName"] = module.params["user_type_name"]
+        # In API V2 the parameter is called userType, V2 ignores the UserTypeName
+        payload["userType"] = module.params["user_type_name"]
 
     if "disabled" in module.params and module.params["disabled"] is not None:
         payload["Disabled"] = module.params["disabled"]
