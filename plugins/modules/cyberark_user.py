@@ -194,6 +194,9 @@ from ansible.module_utils.six.moves.urllib.parse import quote
 import logging
 
 
+def construct_url(api_base_url, end_point):
+    return "{}/{}".format(api_base_url.rstrip("/"), end_point.lstrip("/"))
+
 def user_details(module):
 
     # Get username from module parameters, and api base url
@@ -206,6 +209,7 @@ def user_details(module):
     # Prepare result, end_point, and headers
     result = {}
     end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+    url = construct_url(api_base_url, end_point)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -213,7 +217,7 @@ def user_details(module):
     try:
 
         response = open_url(
-            api_base_url + end_point,
+            url,
             method="GET",
             headers=headers,
             validate_certs=validate_certs,
@@ -232,8 +236,8 @@ def user_details(module):
                 msg=(
                     "Error while performing user_details."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s"
-                    % (api_base_url, end_point, to_text(http_exception))
+                    "\n*** end_point=%s\n ==> %s"
+                    % (url, to_text(http_exception))
                 ),
                 headers=headers,
                 status_code=http_exception.code,
@@ -244,8 +248,8 @@ def user_details(module):
         module.fail_json(
             msg=(
                 "Unknown error while performing user_details."
-                "\n*** end_point=%s%s\n%s"
-                % (api_base_url, end_point, to_text(unknown_exception))
+                "\n*** end_point=%s\n%s"
+                % (url, to_text(unknown_exception))
             ),
             headers=headers,
             status_code=-1,
@@ -357,11 +361,12 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     if proceed:
         logging.info("Proceeding to either update or create")
+        url = construct_url(api_base_url, end_point)
         try:
 
             # execute REST action
             response = open_url(
-                api_base_url + end_point,
+                url,
                 method=HTTPMethod,
                 headers=headers,
                 data=json.dumps(payload),
@@ -379,8 +384,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
                 msg=(
                     "Error while performing user_add_or_update."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s"
-                    % (api_base_url, end_point, to_text(http_exception))
+                    "\n*** end_point=%s\n ==> %s"
+                    % (url, to_text(http_exception))
                 ),
                 payload=payload,
                 headers=headers,
@@ -391,8 +396,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             module.fail_json(
                 msg=(
                     "Unknown error while performing user_add_or_update."
-                    "\n*** end_point=%s%s\n%s"
-                    % (api_base_url, end_point, to_text(unknown_exception))
+                    "\n*** end_point=%s\n%s"
+                    % (url, to_text(unknown_exception))
                 ),
                 payload=payload,
                 headers=headers,
@@ -417,12 +422,13 @@ def user_delete(module):
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
+    url = construct_url(api_base_url, end_point)
 
     try:
 
         # execute REST action
         response = open_url(
-            api_base_url + end_point,
+            url,
             method="DELETE",
             headers=headers,
             validate_certs=validate_certs,
@@ -445,8 +451,8 @@ def user_delete(module):
                 msg=(
                     "Error while performing user_delete."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s"
-                    % (api_base_url, end_point, exception_text)
+                    "\n*** end_point=%s\n ==> %s"
+                    % (url, exception_text)
                 ),
                 headers=headers,
                 status_code=http_exception.code,
@@ -457,8 +463,8 @@ def user_delete(module):
         module.fail_json(
             msg=(
                 "Unknown error while performing user_delete."
-                "\n*** end_point=%s%s\n%s"
-                % (api_base_url, end_point, to_text(unknown_exception))
+                "\n*** end_point=%s\n%s"
+                % (url, to_text(unknown_exception))
             ),
             headers=headers,
             status_code=-1,
@@ -474,7 +480,7 @@ def resolve_group_name_to_id(module):
       "Content-Type": "application/json",
       "Authorization": cyberark_session["token"]
     }
-    url = "{}PasswordVault/api/UserGroups?filter=groupName%20eq{}".format(api_base_url, quote(group_name))
+    url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?filter=groupName%20eq{}".format(quote(group_name)))
     try:
         response = open_url(
             url,
@@ -550,11 +556,12 @@ def user_add_to_group(module):
     if domain_name:
         payload["domain_name"] = domain_name
 
+    url = construct_url(api_base_url, end_point)
     try:
 
         # execute REST action
         response = open_url(
-            api_base_url + end_point,
+            url,
             method="POST",
             headers=headers,
             data=json.dumps(payload),
@@ -577,8 +584,8 @@ def user_add_to_group(module):
                 msg=(
                     "Error while performing user_add_to_group."
                     "Please validate parameters provided."
-                    "\n*** end_point=%s%s\n ==> %s"
-                    % (api_base_url, end_point, exception_text)
+                    "\n*** end_point=%s\n ==> %s"
+                    % (url, exception_text)
                 ),
                 payload=payload,
                 headers=headers,
@@ -590,8 +597,8 @@ def user_add_to_group(module):
         module.fail_json(
             msg=(
                 "Unknown error while performing user_add_to_group."
-                "\n*** end_point=%s%s\n%s"
-                % (api_base_url, end_point, to_text(unknown_exception))
+                "\n*** end_point=%s\n%s"
+                % (url, to_text(unknown_exception))
             ),
             payload=payload,
             headers=headers,
