@@ -580,7 +580,7 @@ def resolve_group_name_to_id(module):
         for group in groups['value']:
             if group['groupName'] == group_name:
                 if group_id == None:
-                    group_id == group['id']
+                    group_id = group['id']
                 else:
                     module.fail_json(msg=("Found more than one group matching %s. Use vault_id instead" % (group_name)))
         # If we made it here we had 1 or 0 users, return them
@@ -638,6 +638,8 @@ def user_add_to_group(module):
     if group_name and not vault_id:
         # If we were given a group_name we need to lookup the vault_id
         vault_id = resolve_group_name_to_id(module)
+        if vault_id == None:
+            module.fail_json(msg="Unable to find a user group named %s, please create that before adding a user to it" % (group_name)))
 
     end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(vault_id)
 
