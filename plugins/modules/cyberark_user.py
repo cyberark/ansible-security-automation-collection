@@ -447,13 +447,19 @@ def resolve_username_to_id(module):
 	    timeout=module.params['timeout'],
         )
         users = json.loads(response.read())
-        if users['Total'] == 0:
-            # The user does not exist
-            return None
-        elif users['Total'] == 1:
-            return users['Users'][0]['id']
-        else:
-            module.fail_json("Found more than one user matching %s. Use vault_user_id instead" % (username))
+        # Return None if the user does not exist
+        user_id = None
+        # Say we have two users: 'someone' and 'someoneelse', a search on someone will return both
+        # So we will lopp over and see if the username returned matches the username we searched for
+        # If so, and we somehow found more than one raise an error
+        for user in users['Users']:
+            if user['username'] == username:
+                if user_id == None:
+                    user_id == user['id']
+                else:
+                    module.fail_json(msg=("Found more than one user matching %s. Use vault_user_id instead" % (username)))
+        # If we made it here we had 1 or 0 users, return them
+        return user_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
         exception_text = to_text(http_exception)
@@ -566,11 +572,19 @@ def resolve_group_name_to_id(module):
             timeout=module.params['timeout'],
         )
         groups = json.loads(response.read())
-        if groups['count'] == 0:
-            module.fail_json(msg=("Unable to find a group named %s" % (group_name)))
-        if groups['count'] > 1:
-            module.fail_json(msg=("Found more than one group named %s, please use vault_id parameter instead" % (group_name)))
-        return groups['value'][0]['id']
+        # Return None if the user does not exist
+        group_id = None
+        # Say we have two groups: 'groupone' and 'grouptwo', a search on group will return both
+        # So we will lopp over and see if the groupname returned matches the groupsname we searched for
+        # If so, and we somehow found more than one raise an error
+        for group in groups['value']:
+            if group['groupName'] == group_name:
+                if group_id == None:
+                    group_id == group['id']
+                else:
+                    module.fail_json(msg=("Found more than one group matching %s. Use vault_id instead" % (group_name)))
+        # If we made it here we had 1 or 0 users, return them
+        return group_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
         module.fail_json(msg=(
