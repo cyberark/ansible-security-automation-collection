@@ -136,6 +136,15 @@ options:
             - The ID of the user to delete
             - Prefered over username
         type: int
+    authorization:
+        description:
+            - A list of authorization options for this user.
+            - Options can include AddSafe and AuditUsers
+            - The default provides backwards compatability with older versions of the collection
+        type: list
+        default:
+          - AddSafe
+          - AuditUsers
 """
 
 EXAMPLES = r"""
@@ -332,6 +341,9 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     if "location" in module.params and module.params["location"] is not None:
         payload["Location"] = module.params["location"]
+
+    if module.params.get("authorization", None) is not None:
+        payload["VaultAuthorization"] = module.params["authorization"]
 
     # --------------------------------------------------------------
     logging.debug(
@@ -697,6 +709,7 @@ def main():
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
+            authorization=dict(type="list", required=False, default=[ 'AddSafe', 'AuditUsers' ]),
         )
     )
 
