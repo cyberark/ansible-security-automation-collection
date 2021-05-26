@@ -139,11 +139,11 @@ options:
     authorization:
         description:
             - A list of authorization options for this user.
-            - Options can include AddSafe and AuditUsers
+            - Options can include AddSafes and AuditUsers
             - The default provides backwards compatability with older versions of the collection
         type: list
         default:
-          - AddSafe
+          - AddSafes
           - AuditUsers
 """
 
@@ -343,7 +343,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
         payload["Location"] = module.params["location"]
 
     if module.params.get("authorization", None) is not None:
-        payload["VaultAuthorization"] = module.params["authorization"]
+        payload["vaultAuthorization"] = module.params["authorization"]
 
     # --------------------------------------------------------------
     logging.debug(
@@ -723,7 +723,7 @@ def main():
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
-            authorization=dict(type="list", required=False, default=[ 'AddSafe', 'AuditUsers' ]),
+            authorization=dict(type="list", required=False, default=[ 'AddSafes', 'AuditUsers' ]),
         )
     )
 
