@@ -34,7 +34,6 @@ options:
         description:
             - The name of the user who will be queried (for details), added,
               updated or deleted.
-            - For deletion, vault_user_id will be prefered.
         type: str
         required: True
     state:
@@ -130,11 +129,6 @@ options:
         description:
             - The ID of the user group to add the user to
             - Prefered over group_name
-        type: int
-    vault_user_id:
-        description:
-            - The ID of the user to delete
-            - Prefered over username
         type: int
     authorization:
         description:
@@ -301,8 +295,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             payload["InitialPassword"] = module.params["initial_password"]
 
     elif HTTPMethod == "PUT":
-        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}"
-        end_point = end_point.format(username)
+        # With the put in this old format, we can not update the vaultAuthorization
+        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
 
     # --- Optionally populate payload based on parameters passed ---
     if "new_password" in module.params and module.params["new_password"] is not None:
@@ -366,6 +360,8 @@ def user_add_or_update(module, HTTPMethod, existing_info):
             "UserTypeName",
             "Disabled",
             "Location",
+            "UserTypeName",
+            "vaultAuthorization",
         ]
         for field_name in updateable_fields:
             logging.debug("#### field_name : %s", field_name)
@@ -455,10 +451,12 @@ def resolve_username_to_id(module):
         for user in users['Users']:
             if user['username'] == username:
                 if user_id == None:
-                    user_id == user['id']
+                    user_id = user['id']
                 else:
-                    module.fail_json(msg=("Found more than one user matching %s. Use vault_user_id instead" % (username)))
+                    module.fail_json(msg=("Found more than one user matching %s, this should be impossible" % (username)))
+
         # If we made it here we had 1 or 0 users, return them
+        logging.debug("Resolved username {} to ID {}".format(username, user_id))
         return user_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
@@ -490,15 +488,13 @@ def user_delete(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
-    vault_user_id = module.params["vault_user_id"]
 
     # Prepare result, end_point, and headers
     result = {}
-    if not vault_user_id and username:
-        vault_user_id = resolve_username_to_id(module)
-        # If the user was not found by username we can return unchanged
-        if vault_user_id == None:
-          return (False, result, None)
+    vault_user_id = resolve_username_to_id(module)
+    # If the user was not found by username we can return unchanged
+    if vault_user_id == None:
+        return (False, result, None)
 
     end_point = ("PasswordVault/api/Users/{0}").format(vault_user_id)
 
@@ -584,6 +580,7 @@ def resolve_group_name_to_id(module):
                 else:
                     module.fail_json(msg=("Found more than one group matching %s. Use vault_id instead" % (group_name)))
         # If we made it here we had 1 or 0 users, return them
+        logging.debug("Resolved group_name {} to ID {}".format(group_name, group_id))
         return group_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
@@ -615,7 +612,6 @@ def user_add_to_group(module):
     username = module.params["username"]
     group_name = module.params["group_name"]
     vault_id = module.params["vault_id"]
-    member_id = module.params["vault_user_id"]
     member_type = (
         "Vault"
         if module.params["member_type"] is None
@@ -641,17 +637,12 @@ def user_add_to_group(module):
         if vault_id == None:
             module.fail_json(msg="Unable to find a user group named {}, please create that before adding a user to it".format(group_name))
 
-    if username and not member_id:
-        member_id = resolve_username_to_id(module)
-        if member_id == None:
-            module.fail_json(msg="Unable to find named {}, please check the user id".format(username))
-
     end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(vault_id)
 
-    # payload = {"UserName": username}
-    payload = {"memberId": member_id, "memberType": member_type}
+    # For some reason the group add uses username instead of id
+    payload = {"memberId": username, "memberType": member_type}
     if domain_name:
-        payload["domain_name"] = domain_name
+        payload["domainName"] = domain_name
 
     url = construct_url(api_base_url, end_point)
     try:
@@ -673,7 +664,8 @@ def user_add_to_group(module):
     except (HTTPError, httplib.HTTPException) as http_exception:
 
         exception_text = to_text(http_exception)
-        if http_exception.code == 409 and "ITATS262E" in exception_text:
+        exception_body = json.loads(http_exception.read().decode())
+        if http_exception.code == 409 and ("ITATS262E" in exception_text or exception_body.get("ErrorCode", "") == "PASWS213E"):
             # User is already member of Group
             return (False, None, http_exception.code)
         else:
@@ -687,6 +679,7 @@ def user_add_to_group(module):
                 payload=payload,
                 headers=headers,
                 status_code=http_exception.code,
+                response=http_exception.read().decode(),
             )
 
     except Exception as unknown_exception:
@@ -726,7 +719,6 @@ def main():
             location=dict(type="str"),
             group_name=dict(type="str"),
             vault_id=dict(type="int"),
-            vault_user_id=dict(type="int"),
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
