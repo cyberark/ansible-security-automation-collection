@@ -168,7 +168,7 @@ def processAuthentication(module):
     state = module.params["state"]
     cyberark_session = module.params["cyberark_session"]
 
-    concurrentSessions = module.params["concurrentSessions"]
+    concurrentSession = module.params["concurrentSession"]
 
     # if in check mode it will not perform password changes
     if module.check_mode and new_password is not None:
@@ -207,8 +207,8 @@ def processAuthentication(module):
         # if connection_number is not None:
         #     payload_dict["connectionNumber"] = connection_number
 
-        if concurrentSessions == True:
-            payload_dict["concurrentSessions"] = True
+        if concurrentSession == True:
+            payload_dict["concurrentSession"] = True
 
         payload = json.dumps(payload_dict)
 
@@ -323,7 +323,7 @@ def main():
         "use_windows_authentication": {"default": False, "type": "bool"},
         "use_ldap_authentication": {"default": False, "type": "bool"},
         "use_cyberark_authentication": {"default": False, "type": "bool"},
-        "concurrentSessions": {"default": False, "type": "bool"},
+        "concurrentSession": {"default": False, "type": "bool"},
         "connection_number": {"type": "int"},
         "state": {
             "type": "str",
