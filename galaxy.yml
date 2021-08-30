@@ -20,3 +20,4 @@ tags:
   - secret
   - privileged
 repository: "https://github.com/cyberark/ansible-security-automation-collection"
+issues: https://github.com/cyberark/ansible-security-automation-collection/issues
