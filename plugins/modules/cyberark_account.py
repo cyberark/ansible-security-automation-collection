@@ -518,12 +518,10 @@ def update_account(module, existing_account):
                                     (
                                         "child_module_parm_value: %s "
                                         "child_existing_account_value=%s path=%s"
-                                    )
-                                    % (
-                                        child_module_parm_value,
-                                        child_existing_account_value,
-                                        path_value,
-                                    )
+                                    ),
+                                    child_module_parm_value,
+                                    child_existing_account_value,
+                                    path_value
                                 )
                                 if child_module_parm_value == removal_value:
                                     removing.update(
@@ -555,12 +553,10 @@ def update_account(module, existing_account):
                                     }
                                 )
                             logging.debug(
-                                "parameter_name=%s  value=%s existing=%s"
-                                % (
-                                    path_value,
-                                    child_module_parm_value,
-                                    child_existing_account_value,
-                                )
+                                "parameter_name=%s  value=%s existing=%s",
+                                path_value,
+                                child_module_parm_value,
+                                child_existing_account_value
                             )
                     # Processing child operations
                     if len(list(adding.keys())) > 0:
@@ -612,8 +608,8 @@ def update_account(module, existing_account):
                             }
                         )
                     logging.debug(
-                        "parameter_name=%s  value=%s existing=%s"
-                        % (parameter_name, module_parm_value, existing_account_value)
+                        "parameter_name=%s  value=%s existing=%s",
+                        parameter_name, module_parm_value, existing_account_value
                     )
 
     if len(payload["Operations"]) != 0:

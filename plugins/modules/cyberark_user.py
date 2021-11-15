@@ -218,7 +218,7 @@ def user_details(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{}".format(username)
     url = construct_url(api_base_url, end_point)
 
     headers = {"Content-Type": "application/json"}
@@ -297,7 +297,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     elif HTTPMethod == "PUT":
         # With the put in this old format, we can not update the vaultAuthorization
-        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{0}".format(username)
+        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{}".format(username)
 
     # --- Optionally populate payload based on parameters passed ---
     if "new_password" in module.params and module.params["new_password"] is not None:
@@ -431,8 +431,8 @@ def resolve_username_to_id(module):
     validate_certs = cyberark_session["validate_certs"]
     url = construct_url(api_base_url, "PasswordVault/api/Users?search={}".format(username))
     headers = {
-      "Content-Type": "application/json",
-      "Authorization": cyberark_session["token"],
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
     }
     try:
         response = open_url(
@@ -462,20 +462,18 @@ def resolve_username_to_id(module):
     except (HTTPError, httplib.HTTPException) as http_exception:
         exception_text = to_text(http_exception)
         module.fail_json(msg=(
-                "Error while performing user_search."
-                "Please validate parameters provided."
-                "\n*** end_point=%s\n ==> %s"
-                % (url, exception_text)
-            ),
+            "Error while performing user_search."
+            "Please validate parameters provided."
+            "\n*** end_point=%s\n ==> %s"
+            % (url, exception_text)),
             headers=headers,
             status_code=http_exception.code,
         )
     except Exception as unknown_exception:
         module.fail_json(msg=(
-                "Unknown error while performing user search."
-                "\n*** end_point=%s\n%s"
-                % (url, to_text(unknown_exception))
-            ),
+            "Unknown error while performing user search."
+            "\n*** end_point=%s\n%s"
+            % (url, to_text(unknown_exception))),
             headers=headers,
             status_code=-1,
         )
@@ -496,7 +494,7 @@ def user_delete(module):
     if vault_user_id is None:
         return (False, result, None)
 
-    end_point = ("PasswordVault/api/Users/{0}").format(vault_user_id)
+    end_point = ("PasswordVault/api/Users/{}").format(vault_user_id)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -555,8 +553,8 @@ def resolve_group_name_to_id(module):
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
     headers = {
-      "Content-Type": "application/json",
-      "Authorization": cyberark_session["token"]
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"]
     }
     url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?search={}".format(quote(group_name)))
     try:
@@ -580,23 +578,21 @@ def resolve_group_name_to_id(module):
                 else:
                     module.fail_json(msg=("Found more than one group matching %s. Use vault_id instead" % (group_name)))
         # If we made it here we had 1 or 0 users, return them
-        logging.debug("Resolved group_name {} to ID {}".format(group_name, group_id))
+        logging.debug("Resolved group_name %s to ID %s", group_name, group_id)
         return group_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
         module.fail_json(msg=(
             "Error while looking up group %s.\n*** end_point=%s\n ==> %s"
-            % (group_name, url, to_text(http_exception))
-            ),
+            % (group_name, url, to_text(http_exception))),
             payload={},
             headers=headers,
             status_code=http_exception.code,
         )
     except Exception as unknown_exception:
         module.fail_json(msg=(
-                "Unknown error while looking up group %s.\n*** end_point=%s\n%s"
-                % (group_name, url, to_text(unknown_exception))
-            ),
+            "Unknown error while looking up group %s.\n*** end_point=%s\n%s"
+            % (group_name, url, to_text(unknown_exception))),
             payload={},
             headers=headers,
             status_code=-1,
@@ -626,8 +622,8 @@ def user_add_to_group(module):
     # Prepare result, end_point, headers and payload
     result = {}
     headers = {
-      "Content-Type": "application/json",
-      "Authorization": cyberark_session["token"]
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"]
     }
 
     # If we went "old school" and were provided a group_name instead of a vault_id we need to resolve it
@@ -637,7 +633,7 @@ def user_add_to_group(module):
         if vault_id is None:
             module.fail_json(msg="Unable to find a user group named {}, please create that before adding a user to it".format(group_name))
 
-    end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(vault_id)
+    end_point = ("/PasswordVault/api/UserGroups/{}/Members").format(vault_id)
 
     # For some reason the group add uses username instead of id
     payload = {"memberId": username, "memberType": member_type}
