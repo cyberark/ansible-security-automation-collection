@@ -206,6 +206,7 @@ import logging
 def construct_url(api_base_url, end_point):
     return "{}/{}".format(api_base_url.rstrip("/"), end_point.lstrip("/"))
 
+
 def user_details(module):
 
     # Get username from module parameters, and api base url
@@ -428,7 +429,6 @@ def resolve_username_to_id(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
-    result = {}
     url = construct_url(api_base_url, "PasswordVault/api/Users?search={}".format(username))
     headers = {
       "Content-Type": "application/json",
@@ -440,7 +440,7 @@ def resolve_username_to_id(module):
             method="GET",
             headers=headers,
             validate_certs=validate_certs,
-	    timeout=module.params['timeout'],
+            timeout=module.params['timeout'],
         )
         users = json.loads(response.read())
         # Return None if the user does not exist
@@ -450,7 +450,7 @@ def resolve_username_to_id(module):
         # If so, and we somehow found more than one raise an error
         for user in users['Users']:
             if user['username'] == username:
-                if user_id == None:
+                if user_id is None:
                     user_id = user['id']
                 else:
                     module.fail_json(msg=("Found more than one user matching %s, this should be impossible" % (username)))
@@ -480,11 +480,11 @@ def resolve_username_to_id(module):
             status_code=-1,
         )
 
+
 def user_delete(module):
 
     # Get username from module parameters, and api base url
     # along with validate_certs from the cyberark_session established
-    username = module.params["username"]
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
@@ -493,7 +493,7 @@ def user_delete(module):
     result = {}
     vault_user_id = resolve_username_to_id(module)
     # If the user was not found by username we can return unchanged
-    if vault_user_id == None:
+    if vault_user_id is None:
         return (False, result, None)
 
     end_point = ("PasswordVault/api/Users/{0}").format(vault_user_id)
@@ -510,7 +510,7 @@ def user_delete(module):
             method="DELETE",
             headers=headers,
             validate_certs=validate_certs,
-	    timeout=module.params['timeout'],
+            timeout=module.params['timeout'],
         )
 
         result = {"result": {}}
@@ -575,7 +575,7 @@ def resolve_group_name_to_id(module):
         # If so, and we somehow found more than one raise an error
         for group in groups['value']:
             if group['groupName'] == group_name:
-                if group_id == None:
+                if group_id is None:
                     group_id = group['id']
                 else:
                     module.fail_json(msg=("Found more than one group matching %s. Use vault_id instead" % (group_name)))
@@ -634,7 +634,7 @@ def user_add_to_group(module):
     if group_name and not vault_id:
         # If we were given a group_name we need to lookup the vault_id
         vault_id = resolve_group_name_to_id(module)
-        if vault_id == None:
+        if vault_id is None:
             module.fail_json(msg="Unable to find a user group named {}, please create that before adding a user to it".format(group_name))
 
     end_point = ("/PasswordVault/api/UserGroups/{0}/Members").format(vault_id)
@@ -654,7 +654,7 @@ def user_add_to_group(module):
             headers=headers,
             data=json.dumps(payload),
             validate_certs=validate_certs,
-	    timeout=module.params['timeout'],
+            timeout=module.params['timeout'],
         )
 
         result = {"result": {}}
@@ -722,7 +722,7 @@ def main():
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
-            authorization=dict(type="list", required=False, default=[ 'AddSafes', 'AuditUsers' ]),
+            authorization=dict(type="list", required=False, default=['AddSafes', 'AuditUsers']),
         )
     )
 
@@ -735,6 +735,8 @@ def main():
 
     state = module.params["state"]
     group_name = module.params["group_name"]
+    vault_id = module.params["vault_id"]
+
 
     if state == "present":
         (changed, result, status_code) = user_details(module)
@@ -752,8 +754,8 @@ def main():
 
         # Add user to group if needed
         if group_name is not None or vault_id is not None:
-          (group_change, no_result, no_status_code) = user_add_to_group(module)
-          changed = changed or group_change
+            (group_change, no_result, no_status_code) = user_add_to_group(module)
+            changed = changed or group_change
 
     elif state == "absent":
         (changed, result, status_code) = user_delete(module)
