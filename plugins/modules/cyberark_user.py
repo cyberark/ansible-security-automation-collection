@@ -737,7 +737,6 @@ def main():
     group_name = module.params["group_name"]
     vault_id = module.params["vault_id"]
 
-
     if state == "present":
         (changed, result, status_code) = user_details(module)
 
