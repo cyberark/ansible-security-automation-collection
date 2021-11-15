@@ -164,11 +164,11 @@ def processAuthentication(module):
     use_windows = module.params["use_windows_authentication"]
     use_cyberark = module.params["use_cyberark_authentication"]
 
-    connection_number = module.params["connection_number"]
+    # connection_number = module.params["connection_number"]
     state = module.params["state"]
     cyberark_session = module.params["cyberark_session"]
 
-    concurrentSessions = module.params["concurrentSessions"]
+    concurrentSession = module.params["concurrentSession"]
 
     # if in check mode it will not perform password changes
     if module.check_mode and new_password is not None:
@@ -196,9 +196,9 @@ def processAuthentication(module):
             use_cyberark = True
             end_point = "/PasswordVault/API/Auth/CyberArk/Logon"
 
-            # The payload will contain username, password
-            # and optionally use_radius_authentication and new_password
-            payload_dict = {"username": username, "password": password}
+        # The payload will contain username, password
+        # and optionally use_radius_authentication and new_password
+        payload_dict = {"username": username, "password": password}
 
         if new_password is not None and use_cyberark:
             payload_dict["newPassword"] = new_password
@@ -207,8 +207,8 @@ def processAuthentication(module):
         # if connection_number is not None:
         #     payload_dict["connectionNumber"] = connection_number
 
-        if concurrentSessions == True:
-            payload_dict["concurrentSessions"] = True
+        if concurrentSession:
+            payload_dict["concurrentSession"] = True
 
         payload = json.dumps(payload_dict)
 
@@ -323,7 +323,7 @@ def main():
         "use_windows_authentication": {"default": False, "type": "bool"},
         "use_ldap_authentication": {"default": False, "type": "bool"},
         "use_cyberark_authentication": {"default": False, "type": "bool"},
-        "concurrentSessions": {"default": False, "type": "bool"},
+        "concurrentSession": {"default": False, "type": "bool"},
         "connection_number": {"type": "int"},
         "state": {
             "type": "str",
