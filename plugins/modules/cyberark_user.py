@@ -194,6 +194,7 @@ status_code:
 
 import json
 
+from __future__ import (absolute_import, division, print_function)
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
 from ansible.module_utils.six.moves import http_client as httplib
