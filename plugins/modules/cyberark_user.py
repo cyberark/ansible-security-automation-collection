@@ -4,6 +4,7 @@
 # Copyright: (c) 2017, Ansible Project
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import (absolute_import, division, print_function)
 
 
 __metaclass__ = type
@@ -194,7 +195,6 @@ status_code:
 
 import json
 
-from __future__ import (absolute_import, division, print_function)
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
 from ansible.module_utils.six.moves import http_client as httplib
@@ -205,7 +205,7 @@ import logging
 
 
 def construct_url(api_base_url, end_point):
-    return "{}/{}".format(api_base_url.rstrip("/"), end_point.lstrip("/"))
+    return "{baseurl}/{endpoint}".format(baseurl=api_base_url.rstrip("/"), endpoint=end_point.lstrip("/"))
 
 
 def user_details(module):
@@ -219,7 +219,7 @@ def user_details(module):
 
     # Prepare result, end_point, and headers
     result = {}
-    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{}".format(username)
+    end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{pusername}".format(pusername=username)
     url = construct_url(api_base_url, end_point)
 
     headers = {"Content-Type": "application/json"}
@@ -298,7 +298,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
 
     elif HTTPMethod == "PUT":
         # With the put in this old format, we can not update the vaultAuthorization
-        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{}".format(username)
+        end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{pusername}".format(pusername=username)
 
     # --- Optionally populate payload based on parameters passed ---
     if "new_password" in module.params and module.params["new_password"] is not None:
@@ -430,7 +430,7 @@ def resolve_username_to_id(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
-    url = construct_url(api_base_url, "PasswordVault/api/Users?search={}".format(username))
+    url = construct_url(api_base_url, "PasswordVault/api/Users?search={pusername}".format(pusername=username))
     headers = {
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"],
@@ -457,7 +457,7 @@ def resolve_username_to_id(module):
                     module.fail_json(msg=("Found more than one user matching %s, this should be impossible" % (username)))
 
         # If we made it here we had 1 or 0 users, return them
-        logging.debug("Resolved username {} to ID {}".format(username, user_id))
+        logging.debug("Resolved username {%s} to ID {%s}", username, user_id)
         return user_id
 
     except (HTTPError, httplib.HTTPException) as http_exception:
@@ -495,7 +495,7 @@ def user_delete(module):
     if vault_user_id is None:
         return (False, result, None)
 
-    end_point = ("PasswordVault/api/Users/{}").format(vault_user_id)
+    end_point = ("PasswordVault/api/Users/{pvaultuserid}").format(pvaultuserid=vault_user_id)
 
     headers = {"Content-Type": "application/json"}
     headers["Authorization"] = cyberark_session["token"]
@@ -557,7 +557,7 @@ def resolve_group_name_to_id(module):
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"]
     }
-    url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?search={}".format(quote(group_name)))
+    url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?search={pgroupname}".format(pgroupname=quote(group_name)))
     try:
         response = open_url(
             url,
@@ -632,9 +632,9 @@ def user_add_to_group(module):
         # If we were given a group_name we need to lookup the vault_id
         vault_id = resolve_group_name_to_id(module)
         if vault_id is None:
-            module.fail_json(msg="Unable to find a user group named {}, please create that before adding a user to it".format(group_name))
+            module.fail_json(msg="Unable to find a user group named {pgroupname}, please create that before adding a user to it".format(pgroupname=group_name))
 
-    end_point = ("/PasswordVault/api/UserGroups/{}/Members").format(vault_id)
+    end_point = ("/PasswordVault/api/UserGroups/{pvaultid}/Members").format(pvaultid=vault_id)
 
     # For some reason the group add uses username instead of id
     payload = {"memberId": username, "memberType": member_type}
