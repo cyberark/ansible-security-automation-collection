@@ -15,7 +15,7 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = """
 ---
-module: cyberark_account
+module: cyberark_safe
 short_description: Module for CyberArk Account object creation, deletion, and
     modification using PAS Web Services SDK.
 author:
