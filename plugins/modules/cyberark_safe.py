@@ -16,24 +16,25 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: cyberark_safe
-short_description: Module for CyberArk Account object creation, deletion, and
+short_description: Module for CyberArk Safe object creation, deletion, and
     modification using PAS Web Services SDK.
 author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - James Stutes (@jimmyjamcabd)
-version_added: 2.4
+    - Lebas Jerome 
+version_added: 1.0
 description:
-    - Creates a URI for adding, deleting, modifying a privileged credential
-      within the Cyberark Vault.  The request uses the Privileged Account
+    - Creates a URI for adding, deleting, modifying a privileged safe
+      within the Cyberark Vault.  The request uses the Privileged Safe
       Security Web Services SDK.
 
 
 options:
     state:
         description:
-            - Assert the desired state of the account C(present) to creat or
-              update and account object. Set to C(absent) for deletion of an
+            - Assert the desired state of the safe C(present) to create or
+              update and safe object. Set to C(absent) for deletion of an
               account object.
         required: true
         default: present
