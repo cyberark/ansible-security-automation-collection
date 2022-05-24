@@ -467,6 +467,7 @@ def update_account(module, existing_account):
     headers = {
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
 
     payload = {"Operations": []}
@@ -697,6 +698,7 @@ def add_account(module):
     headers = {
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
 
     payload = {"safeName": module.params["safe"]}
@@ -833,6 +835,7 @@ def delete_account(module, existing_account):
         headers = {
             "Content-Type": "application/json",
             "Authorization": cyberark_session["token"],
+            "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
         }
 
         try:
@@ -957,6 +960,7 @@ def reset_account_if_needed(module, existing_account):
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": cyberark_session["token"],
+                "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
             }
             HTTPMethod = "POST"
             try:
@@ -1085,8 +1089,11 @@ def get_account(module):
 
     logging.debug("End Point => %s", end_point)
 
-    headers = {"Content-Type": "application/json"}
-    headers["Authorization"] = cyberark_session["token"]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
 
     try:
 

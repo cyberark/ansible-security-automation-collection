@@ -222,8 +222,11 @@ def user_details(module):
     end_point = "/PasswordVault/WebServices/PIMServices.svc/Users/{pusername}".format(pusername=username)
     url = construct_url(api_base_url, end_point)
 
-    headers = {"Content-Type": "application/json"}
-    headers["Authorization"] = cyberark_session["token"]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
 
     try:
 
@@ -282,6 +285,7 @@ def user_add_or_update(module, HTTPMethod, existing_info):
     headers = {
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
 
     # end_point and payload sets different depending on POST/PUT
@@ -434,6 +438,7 @@ def resolve_username_to_id(module):
     headers = {
         "Content-Type": "application/json",
         "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
     try:
         response = open_url(
@@ -497,8 +502,11 @@ def user_delete(module):
 
     end_point = ("PasswordVault/api/Users/{pvaultuserid}").format(pvaultuserid=vault_user_id)
 
-    headers = {"Content-Type": "application/json"}
-    headers["Authorization"] = cyberark_session["token"]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
     url = construct_url(api_base_url, end_point)
 
     try:
@@ -555,7 +563,8 @@ def resolve_group_name_to_id(module):
     validate_certs = cyberark_session["validate_certs"]
     headers = {
         "Content-Type": "application/json",
-        "Authorization": cyberark_session["token"]
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
     url = construct_url(api_base_url, "/PasswordVault/api/UserGroups?search={pgroupname}".format(pgroupname=quote(group_name)))
     try:
@@ -624,7 +633,8 @@ def user_add_to_group(module):
     result = {}
     headers = {
         "Content-Type": "application/json",
-        "Authorization": cyberark_session["token"]
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
     }
 
     # If we went "old school" and were provided a group_name instead of a vault_id we need to resolve it

@@ -176,7 +176,10 @@ def processAuthentication(module):
         new_password = None
 
     # Defining initial values for open_url call
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
 
     payload = ""
 
