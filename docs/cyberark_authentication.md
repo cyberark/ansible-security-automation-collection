@@ -44,6 +44,11 @@ options:
     cyberark_session:
         description:
             - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session.
+    timeout:
+        type: int
+        default: 10
+        description:
+            - Allows you set a timeout for when your authenticating to Cyberark
 ```
 ## Example Playbooks
 

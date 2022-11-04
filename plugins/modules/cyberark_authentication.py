@@ -92,6 +92,10 @@ options:
               different values to perform actions on a logged-on CyberArk
               session.
         type: dict
+    timeout:
+        description:
+            - Allows you set a timeout for when your authenticating to Cyberark
+        type: int
 """
 
 EXAMPLES = """
@@ -171,6 +175,8 @@ def processAuthentication(module):
 
     concurrentSession = module.params["concurrentSession"]
 
+    timeout = module.params["timeout"]
+
     # if in check mode it will not perform password changes
     if module.check_mode and new_password is not None:
         new_password = None
@@ -240,6 +246,7 @@ def processAuthentication(module):
             headers=headers,
             data=payload,
             validate_certs=validate_certs,
+            timeout=timeout,
         )
 
     except (HTTPError, HTTPException) as http_exception:
@@ -336,6 +343,7 @@ def main():
             "default": "present",
         },
         "cyberark_session": {"type": "dict"},
+        "timeout": {"default": 10, "type": "int"},
     }
 
     # cyberark and radius -> mutually_exclusive is cyberark and ldap
