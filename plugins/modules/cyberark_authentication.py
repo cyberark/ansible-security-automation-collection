@@ -189,6 +189,7 @@ def processAuthentication(module):
 
         if use_ldap:
             end_point = "/PasswordVault/API/Auth/LDAP/Logon"
+            payload_dict = {"username": username, "password": password}
 
         elif use_radius:
             end_point = "/PasswordVault/API/Auth/radius/Logon"
