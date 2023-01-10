@@ -101,7 +101,7 @@ options:
     api_base_url: "http://10.10.0.1"
     app_id: "TestID"
     query: "Safe=test;UserName=admin"
-  register: {{ result }}
+  register: result
   
   result:
      { api_base_url }"/AIMWebService/api/Accounts?AppId="{ app_id }"&Query="{ query }
@@ -119,7 +119,7 @@ options:
     query_format: Exact
     fail_request_on_password_change: True
     reason: "requesting credential for Ansible deployment"
-  register: {{ result }}
+  register: result
   
   result:
      { api_base_url }"/AIMWebService/api/Accounts?AppId="{ app_id }"&Query="{ query }"&ConnectionTimeout="{ connection_timeout }"&QueryFormat="{ query_format }"&FailRequestOnPasswordChange="{ fail_request_on_password_change }
