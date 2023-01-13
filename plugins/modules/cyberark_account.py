@@ -1240,7 +1240,7 @@ def main():
                     "default": "always",
                 },
             },
-            "no_log": True,
+            "no_log": False,
         },
         "remote_machines_access": {
             "required": False,
