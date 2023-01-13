@@ -22,7 +22,7 @@ author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Erasmo Acosta (@erasmix)
     - James Stutes (@JimmyJamCABD)
-version_added: 2.4
+version_added: '2.4.0'
 description:
     - Creates a URI for retrieving a credential from a password object stored
       in the Cyberark Vault.  The request uses the Privileged Account Security
@@ -185,7 +185,7 @@ result:
             returned: if assigned to a policy
         Safe:
             description: The safe where the queried credential is stored
-            type: string
+            type: str
             returned: always
         Username:
             description: The username of the credential being queried
@@ -323,7 +323,7 @@ def main():
         },
         "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
-        "client_key": {"type": "str", "required": False},
+        "client_key": {"type": "str", "required": False, "no_log": True},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)

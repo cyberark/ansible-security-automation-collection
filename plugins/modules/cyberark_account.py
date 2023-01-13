@@ -22,7 +22,7 @@ author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - James Stutes (@jimmyjamcabd)
-version_added: 2.4
+version_added: '2.4.0'
 description:
     - Creates a URI for adding, deleting, modifying a privileged credential
       within the Cyberark Vault.  The request uses the Privileged Account
@@ -35,7 +35,7 @@ options:
             - Assert the desired state of the account C(present) to creat or
               update and account object. Set to C(absent) for deletion of an
               account object.
-        required: true
+        required: false
         default: present
         choices: [present, absent]
         type: str
@@ -43,7 +43,7 @@ options:
         description:
             - Parameter used to define the level of troubleshooting output to
               the C(logging_file) value.
-        required: true
+        required: false
         choices: [NOTSET, DEBUG, INFO]
         type: str
     logging_file:
@@ -57,7 +57,7 @@ options:
             - A string containing the base URL of the server hosting CyberArk's
               Privileged Account Security Web Services SDK.
             - Example U(https://<IIS_Server_Ip>/PasswordVault/api/)
-        required: true
+        required: false
         type: str
     validate_certs:
         description:
@@ -71,7 +71,7 @@ options:
         description:
             - Dictionary set by a CyberArk authentication containing the
               different values to perform actions on a logged-on CyberArk
-              session, please see M(cyberark_authentication) module for an
+              session, please see M(cyberark.pas.cyberark_authentication) module for an
               example of cyberark_session.
         required: true
         type: dict
@@ -337,7 +337,7 @@ result:
                   the credential.
             returned: successful addition and modification
             type: complex
-            sample:
+            contains:
                 automaticManagementEnabled:
                     description:
                         - Parameter that indicates whether the CPM will manage
@@ -353,6 +353,7 @@ result:
                     sample: "1567824520"
                 manualManagementReason:
                     description:
+                        - Reason for disabling automatic management of the account
                     returned: if C(automaticManagementEnabled) is set to false
                     type: str
                     sample: This is a static account
@@ -1223,7 +1224,10 @@ def main():
             "required": False,
             "type": "dict",
             "options": {
-                "automatic_management_enabled": {"type": "bool"},
+                "automatic_management_enabled": {
+                    "type": "bool",
+                    "default": False,
+                },
                 "manual_management_reason": {"type": "str"},
                 "management_action": {
                     "type": "str",
@@ -1236,6 +1240,7 @@ def main():
                     "default": "always",
                 },
             },
+            "no_log": True,
         },
         "remote_machines_access": {
             "required": False,

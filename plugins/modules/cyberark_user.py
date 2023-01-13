@@ -24,7 +24,7 @@ author:
   - Cyberark Bizdev (@cyberark-bizdev)
   - Erasmo Acosta (@erasmix)
   - James Stutes (@jimmyjamcabd)
-version_added: 2.4
+version_added: '2.4.0'
 description:
     - CyberArk User Management using PAS Web Services SDK,
       It currently supports the following actions Get User Details, Add User,
@@ -48,7 +48,7 @@ options:
         description:
             - Parameter used to define the level of troubleshooting output to
               the C(logging_file) value.
-        required: true
+        required: false
         choices: [NOTSET, DEBUG, INFO]
         default: NOTSET
         type: str
@@ -62,7 +62,7 @@ options:
         description:
             - Dictionary set by a CyberArk authentication containing the
               different values to perform actions on a logged-on CyberArk
-              session, please see M(cyberark_authentication) module for an
+              session, please see M(cyberark.pas.cyberark_authentication) module for an
               example of cyberark_session.
         type: dict
         required: True
@@ -95,6 +95,14 @@ options:
               next logon.
         type: bool
         default: no
+    domain_name:
+        description:
+            - The name of the user domain.
+        type: str
+    member_type:
+        description:
+            - The type of member.
+        type: str
     expiry_date:
         description:
             - The date and time when the user account will expire and become
@@ -137,6 +145,7 @@ options:
             - Options can include AddSafes and AuditUsers
             - The default provides backwards compatability with older versions of the collection
         type: list
+        elements: str
         default:
           - AddSafes
           - AuditUsers
@@ -719,17 +728,17 @@ def main():
             email=dict(type="str"),
             first_name=dict(type="str"),
             last_name=dict(type="str"),
-            change_password_on_the_next_logon=dict(type="bool"),
+            change_password_on_the_next_logon=dict(type="bool", default=False),
             expiry_date=dict(type="str"),
             user_type_name=dict(type="str"),
-            disabled=dict(type="bool"),
+            disabled=dict(type="bool", default=False),
             location=dict(type="str"),
             group_name=dict(type="str"),
             vault_id=dict(type="int"),
             member_type=dict(type="str"),
             domain_name=dict(type="str"),
             timeout=dict(type="float", default=10),
-            authorization=dict(type="list", required=False, default=['AddSafes', 'AuditUsers']),
+            authorization=dict(type="list", elements="str", required=False, default=['AddSafes', 'AuditUsers']),
         )
     )
 
