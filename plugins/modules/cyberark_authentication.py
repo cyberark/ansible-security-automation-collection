@@ -20,7 +20,7 @@ short_description: CyberArk Authentication using PAS Web Services SDK.
 author:
     - Edward Nunez (@enunez-cyberark)
     - Cyberark Bizdev (@cyberark-bizdev)
-version_added: '2.4.0'
+version_added: '1.0.0'
 description:
     - Authenticates to CyberArk Vault using Privileged Account Security
       Web Services SDK and creates a session fact that can be used by other

@@ -22,7 +22,7 @@ author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - James Stutes (@jimmyjamcabd)
-version_added: '2.4.0'
+version_added: '1.0.0'
 description:
     - Creates a URI for adding, deleting, modifying a privileged credential
       within the Cyberark Vault.  The request uses the Privileged Account

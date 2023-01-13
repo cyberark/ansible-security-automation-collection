@@ -22,7 +22,7 @@ author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Erasmo Acosta (@erasmix)
     - James Stutes (@JimmyJamCABD)
-version_added: '2.4.0'
+version_added: '1.0.0'
 description:
     - Creates a URI for retrieving a credential from a password object stored
       in the Cyberark Vault.  The request uses the Privileged Account Security
