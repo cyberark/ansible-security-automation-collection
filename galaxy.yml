@@ -5,6 +5,7 @@ readme: README.md
 authors:
     - CyberArk Business Development (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
+    - Joe Garcia (@infamousjoeg)
 description: "This is a Collection of the CyberArk Ansible Security Automation toolkit."
 license: "MIT"
 tags:
