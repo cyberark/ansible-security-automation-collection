@@ -51,6 +51,13 @@ None.
 - Using AAM Central Credential Provider (CCP), to securely retreive secrets and account properties from EPV to be registered for use in playbooks<br>
 [Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_credential.md)
 
+## Roles
+
+#### aimprovider
+
+- Install agent-based Credential Provider (AIM) on Linux hosts
+[Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/aimprovider.md)
+
 #### Python3
 
 - The modules will work with either python2 or python3.

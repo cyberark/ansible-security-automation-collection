@@ -18,10 +18,9 @@ DOCUMENTATION = """
 module: cyberark_authentication
 short_description: CyberArk Authentication using PAS Web Services SDK.
 author:
-    - Edward Nunez (@enunez-cyberark) CyberArk BizDev
+    - Edward Nunez (@enunez-cyberark)
     - Cyberark Bizdev (@cyberark-bizdev)
-    - Edgar Mota
-version_added: 2.4
+version_added: '1.0.0'
 description:
     - Authenticates to CyberArk Vault using Privileged Account Security
       Web Services SDK and creates a session fact that can be used by other
@@ -86,6 +85,11 @@ options:
         description:
             - To support multiple connections for same user specify
             - different value for this parameter.
+    concurrentSession:
+        type: bool
+        default: False
+        description:
+            - Whether or not to allow concurrent sessions for the same user.
     cyberark_session:
         description:
             - Dictionary set by a CyberArk authentication containing the
@@ -95,6 +99,7 @@ options:
     timeout:
         description:
             - Allows you set a timeout for when your authenticating to Cyberark
+        default: 10
         type: int
 """
 
