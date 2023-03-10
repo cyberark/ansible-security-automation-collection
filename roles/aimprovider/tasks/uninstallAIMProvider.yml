@@ -31,7 +31,7 @@
       state: absent
       cyberark_session: "{{ cyberark_session }}"
     register: cyberarkaction
-    ignore_errors: yes
+    ignore_errors: true
     when: (cyberark_session.token is defined)
 
   # debug:
