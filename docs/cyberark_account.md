@@ -174,7 +174,7 @@ options:
                 automatic_management_enabled:
                     description:
                         - Parameter that indicates whether the CPM will manage the password or not
-                    default: True
+                    default: true
                     type: bool
                 manual_management_reason:
                     description:
@@ -232,7 +232,7 @@ options:
     - name: Logon to CyberArk Vault using PAS Web Services SDK
       cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
-        validate_certs: no
+        validate_certs: false
         username: "bizdev"
         password: "Cyberark1"
 

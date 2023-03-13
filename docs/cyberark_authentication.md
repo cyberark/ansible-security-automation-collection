@@ -26,19 +26,19 @@ options:
             - A string containing the base URL of the server hosting CyberArk's Privileged Account Security Web Services SDK.
     validate_certs:
         type: bool
-        default: 'yes'
+        default: 'true'
         description:
             - If C(false), SSL certificates will not be validated.  This should only
               set to C(false) used on personally controlled sites using self-signed
               certificates.
     use_shared_logon_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not Shared Logon Authentication will be used.
     use_radius_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not users will be authenticated via a RADIUS server. Valid values are true/false.
     cyberark_session:
@@ -77,7 +77,7 @@ In addition to SSL, use Client Authentication to authenticate Ansible using a cl
 - name: Logon to CyberArk Vault using PAS Web Services SDK - use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
-    use_shared_logon_authentication: yes
+    use_shared_logon_authentication: true
 ```
 
 **CyberArk Authentication**<br/>
@@ -91,7 +91,7 @@ Users can authenticate using **CyberArk**, **LDAP** or **RADIUS** authentication
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
-    use_shared_logon_authentication: no
+    use_shared_logon_authentication: false
 ```
 **Logoff**<br/>
 This method logs off the user and removes the Vault session.

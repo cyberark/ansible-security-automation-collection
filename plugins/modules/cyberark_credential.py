@@ -112,14 +112,14 @@ EXAMPLES = """
     - name: credential retrieval advanced
       cyberark_credential:
         api_base_url: "https://components.cyberark.local"
-        validate_certs: yes
+        validate_certs: true
         client_cert: /etc/pki/ca-trust/source/client.pem
         client_key: /etc/pki/ca-trust/source/priv-key.pem
         app_id: "TestID"
         query: "Safe=test;UserName=admin"
         connection_timeout: 60
         query_format: Exact
-        fail_request_on_password_change: True
+        fail_request_on_password_change: true
         reason: "requesting credential for Ansible deployment"
       register: result
 

@@ -10,7 +10,7 @@
 - name: Verify status of aimprv service initially
   command: service aimprv status
   register: service_already_running
-  ignore_errors: yes
+  ignore_errors: true
   changed_when: false
   args:
     warn: false

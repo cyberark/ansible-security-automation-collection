@@ -54,29 +54,29 @@ options:
         type: str
     validate_certs:
         type: bool
-        default: 'yes'
+        default: 'true'
         description:
             - If C(false), SSL certificates will not be validated.  This
               should only set to C(false) used on personally controlled
               sites using self-signed certificates.
     use_ldap_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not LDAP will be used.
     use_windows_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not Windows will be used.
     use_cyberark_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not LDAP will be used.
     use_radius_authentication:
         type: bool
-        default: 'no'
+        default: 'false'
         description:
             - Whether or not users will be authenticated via a RADIUS
               server. Valid values are true/false.
@@ -87,7 +87,7 @@ options:
             - different value for this parameter.
     concurrentSession:
         type: bool
-        default: False
+        default: false
         description:
             - Whether or not to allow concurrent sessions for the same user.
     cyberark_session:
@@ -107,14 +107,14 @@ EXAMPLES = """
 - name: Logon - use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
-    use_shared_logon_authentication: yes
+    use_shared_logon_authentication: true
 
 - name: Logon - Not use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
-    use_shared_logon_authentication: no
+    use_shared_logon_authentication: false
 
 - name: Logoff from CyberArk Vault
   cyberark_authentication:

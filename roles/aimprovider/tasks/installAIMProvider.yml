@@ -58,7 +58,7 @@
   - name: Verify status of service after installing Provider
     command: service aimprv status
     register: command_result
-    ignore_errors: yes
+    ignore_errors: true
     args:
       warn: false
 

@@ -36,7 +36,7 @@ options:
             - The name of the user who will be queried (for details), added,
               updated or deleted.
         type: str
-        required: True
+        required: true
     state:
         description:
             - Specifies the state needed for the user present for create user,
@@ -65,7 +65,7 @@ options:
               session, please see M(cyberark.pas.cyberark_authentication) module for an
               example of cyberark_session.
         type: dict
-        required: True
+        required: true
     initial_password:
         description:
             - The password that the new user will use to log on the first time.
@@ -94,7 +94,7 @@ options:
             - Whether or not the user must change their password in their
               next logon.
         type: bool
-        default: no
+        default: false
     domain_name:
         description:
             - The name of the user domain.
@@ -117,7 +117,7 @@ options:
         description:
             - Whether or not the user will be disabled.
         type: bool
-        default: no
+        default: false
     location:
         description:
             - The Vault Location for the user.
@@ -155,14 +155,14 @@ EXAMPLES = r"""
 - name: Logon to CyberArk Vault using PAS Web Services SDK
   cyberark_authentication:
     api_base_url: https://components.cyberark.local
-    use_shared_logon_authentication: yes
+    use_shared_logon_authentication: true
 
 - name: Create user & immediately add it to a group
   cyberark_user:
     username: username
     initial_password: password
     user_type_name: EPVUser
-    change_password_on_the_next_logon: no
+    change_password_on_the_next_logon: false
     group_name: GroupOfUser
     state: present
     cyberark_session: '{{ cyberark_session }}'
@@ -171,7 +171,7 @@ EXAMPLES = r"""
   cyberark_user:
     username: Username
     new_password: password
-    disabled: no
+    disabled: false
     state: present
     cyberark_session: '{{ cyberark_session }}'
 

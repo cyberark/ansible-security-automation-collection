@@ -27,7 +27,7 @@ options:
         description:
             - The name of the user who will be queried (for details), added, updated or deleted.
         type: str
-        required: True
+        required: true
     state:
         description:
             - Specifies the state needed for the user present for create user, absent for delete user.
@@ -39,7 +39,7 @@ options:
             - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session,
               please see M(cyberark_authentication) module for an example of cyberark_session.
         type: dict
-        required: True
+        required: true
     initial_password:
         description:
             - The password that the new user will use to log on the first time.
@@ -66,7 +66,7 @@ options:
         description:
             - Whether or not the user must change their password in their next logon.
         type: bool
-        default: no
+        default: false
     expiry_date:
         description:
             - The date and time when the user account will expire and become disabled.
@@ -80,7 +80,7 @@ options:
         description:
             - Whether or not the user will be disabled.
         type: bool
-        default: no
+        default: false
     location:
         description:
             - The Vault Location for the user.
@@ -98,7 +98,7 @@ This playbook will check if username `admin` exists, if it does not, it will pro
 - name: Logon to CyberArk Vault using PAS Web Services SDK
   cyberark_authentication:
     api_base_url: https://components.cyberark.local
-    use_shared_logon_authentication: yes
+    use_shared_logon_authentication: true
 
 - name: Create user, add to Group
   cyberark_user:
@@ -108,7 +108,7 @@ This playbook will check if username `admin` exists, if it does not, it will pro
     email: "cyber.admin@ansibledev.com"
     initial_password: PA$$Word123
     user_type_name: EPVUser
-    change_password_on_the_next_logon: yes
+    change_password_on_the_next_logon: true
     group_name: Auditors
     state: present
     cyberark_session: '{{ cyberark_session }}'
@@ -126,7 +126,7 @@ This playbook will identify the user and delete it from the CyberArk Vault based
 - name: Logon to CyberArk Vault using PAS Web Services SDK - use_shared_logon_authentication
   cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
-    use_shared_logon_authentication: yes
+    use_shared_logon_authentication: true
 
 - name: Removing a CyberArk User
   cyberark_user:
@@ -147,7 +147,7 @@ This playbook is an example of disabling a user based on the `disabled: true` va
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
-    use_shared_logon_authentication: no
+    use_shared_logon_authentication: false
     
 - name: Disabling a CyberArk User
   cyberark_user:
