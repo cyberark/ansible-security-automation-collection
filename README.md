@@ -9,7 +9,11 @@
 
 #### cyberark.pas
 
-This collection is the CyberArk Ansible Security Automation project and can be found on [ansible galaxy](https://galaxy.ansible.com/cyberark/pas). This is aimed to enable the automation of securing privileged access by storing privileged accounts in the Enterprise Password Vault (EPV), controlling user's access to privileged accounts in EPV, and securely retreiving secrets using Application Access Manager (AAM). The following modules will allow CyberArk administrators to automate the following tasks:
+This collection is the CyberArk Ansible Security Automation project and can be found on [ansible galaxy](https://galaxy.ansible.com/cyberark/pas). This is aimed to enable the automation of securing privileged access by storing privileged accounts in the Enterprise Password Vault (EPV), controlling user's access to privileged accounts in EPV, and securely retreiving secrets using Application Access Manager (AAM).
+The collection includes [support for Event-Driven Ansible](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_eda.md) by providing an event-source plugin for syslog and also guidance on how to use it. 
+
+
+The following modules will allow CyberArk administrators to automate the following tasks:
 
 #### Requirements
 
@@ -65,6 +69,5 @@ None.
 #### Author Information
 - CyberArk Business Development Technical Team 
     - @enunez-cyberark
-    - @eemotacyber
-    - @jimmyjamcabd
+    - @cyberark-bizdev
 

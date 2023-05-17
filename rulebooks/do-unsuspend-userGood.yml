@@ -1,0 +1,7 @@
+- hosts: all
+  connection: local
+  tasks:
+    - debug:
+        msg: "Error: you been suspended due to too many tries or login from unauthorized station. We will reactivate your account now"
+    - debug:
+        var: event.format
