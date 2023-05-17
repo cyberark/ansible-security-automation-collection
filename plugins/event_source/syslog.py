@@ -1,5 +1,5 @@
 """
-syberarksyslog.py
+syslog.py
 
 An ansible-rulebook event source module for receiving events via a syslog.
 
@@ -57,7 +57,7 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     transport, protocol = await asyncio.get_running_loop().create_datagram_endpoint(
         lambda: SyslogProtocol(queue),
         local_addr=((host, port)))
-    logger.info(f"Starting cyberark.syslog.eda [Host={host}, port={port}]")
+    logger.info(f"Starting cyberark.pas.syslog [Host={host}, port={port}]")
     try:
         while True:
             await asyncio.sleep(3600)  # Serve for 1 hour.

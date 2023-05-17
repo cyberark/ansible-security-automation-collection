@@ -1,7 +1,7 @@
 - name: Demo rules with cyberarksyslog as source
   hosts: localhost 
   sources:
-    - cyberark.eda.syslog:
+    - cyberark.pas.syslog:
         host: 0.0.0.0 
         port: 1514
   rules:
