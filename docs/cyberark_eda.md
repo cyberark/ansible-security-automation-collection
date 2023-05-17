@@ -8,6 +8,8 @@ The following options will be available to configure CyberArk as Event Source:
 * CyberArk to Rsyslog to EDA Kafka Topic
 * CyberArk Syslog as EDA event source (UDP Protocol)
 
+**NOTE**: For Rsyslog work, it was tested successfully with rsyslogd 8.2306.0.master (aka 2023.06) running on Ubuntu
+
 ## CyberArk to Rsyslog to EDA Webhook
 
 ![CyberArk to Rsyslog to EDA Webhook](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/rsyslog-webhook.png?raw=true)
