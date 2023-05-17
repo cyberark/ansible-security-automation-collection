@@ -15,14 +15,14 @@ The following options will be available to configure CyberArk as Event Source:
 ### Vault Configuration
 Follow the steps under [Security Information and Event Management (SIEM) Applications](https://docs.cyberark.com/Product-Doc/OnlineHelp/PAS/Latest/en/Content/PASIMP/DV-Integrating-with-SIEM-Applications.htm) documentation to setup the integration:
 
-* Copy the [ansible-json-v1.0.xsl](https://raw.githubusercontent.com/elastic/beats/8.7/x-pack/filebeat/module/cyberarkpas/_meta/assets/elastic-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
+* Copy the [cyberark-eda-json-v1.0.xsl](https://github.com/cyberark/ansible-security-automation-collection/blob/master/plugins/event_source/cyberark-eda-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
 * See sample syslog configuration for DBPARM.ini below
 * Recommended to use TCP and port 514 as it’s default rsyslog port.
 
 ```
 [SYSLOG]
 UseLegacySyslogFormat=Yes
-SyslogTranslatorFile=Syslog\ansible-json-v1.0.xsl
+SyslogTranslatorFile=Syslog\cyberark-eda-json-v1.0.xsl
 SyslogServerIP=<INSERT RSYSLOG IP HERE>
 SyslogServerPort=514
 SyslogServerProtocol=TCP
@@ -73,7 +73,7 @@ f.close()
 ### Vault Configuration
 Follow the steps under [Security Information and Event Management (SIEM) Applications](https://docs.cyberark.com/Product-Doc/OnlineHelp/PAS/Latest/en/Content/PASIMP/DV-Integrating-with-SIEM-Applications.htm) documentation to setup the integration:
 
-* Copy the [ansible-json-v1.0.xsl](https://raw.githubusercontent.com/elastic/beats/8.7/x-pack/filebeat/module/cyberarkpas/_meta/assets/elastic-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
+* Copy the [cyberark-eda-json-v1.0.xsl](https://github.com/cyberark/ansible-security-automation-collection/blob/master/plugins/event_source/cyberark-eda-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
 * See sample syslog configuration for DBPARM.ini below
 * Recommended to use TCP and port 514 as it’s default rsyslog port.
 
@@ -121,7 +121,7 @@ This EDA plugin acts as a syslog listener on specific port using UDP bypassing t
 Follow the steps under [Security Information and Event Management (SIEM) Applications](https://docs.cyberark.com/Product-Doc/OnlineHelp/PAS/Latest/en/Content/PASIMP/DV-Integrating-with-SIEM-Applications.htm) documentation to setup the integration:
 
 
-* Copy the [ansible-json-v1.0.xsl](https://raw.githubusercontent.com/elastic/beats/8.7/x-pack/filebeat/module/cyberarkpas/_meta/assets/elastic-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
+* Copy the [cyberark-eda-json-v1.0.xsl](https://github.com/cyberark/ansible-security-automation-collection/blob/master/plugins/event_source/cyberark-eda-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
 * See sample syslog configuration for DBPARM.ini below
 * •	Currently only UDP is supported for the syslog event-source plugin
 
