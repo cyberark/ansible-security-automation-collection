@@ -4,7 +4,7 @@
 <xsl:output method='text' version='1.0' encoding='UTF-8' indent='no'/>
 
 <!-- version control variables -->
-<xsl:variable name="format" select="'elastic'"/>
+<xsl:variable name="format" select="'cyberark-eda-json'"/>
 <xsl:variable name="version" select="'1.0'"/>
 
 <!-- configuration -->
