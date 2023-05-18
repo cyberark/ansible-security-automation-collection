@@ -1,4 +1,4 @@
-- name: Demo rules with cyberarksyslog as source
+- name: Demo rules with CyberArk syslog as source
   hosts: localhost 
   sources:
     - cyberark.pas.syslog:

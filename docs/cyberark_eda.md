@@ -141,7 +141,7 @@ SyslogServerIP=<INSERT RSYSLOG IP HERE>
 SyslogServerPort=1514
 SyslogServerProtocol=UDP
 ```
-![Sample rulebook](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/eda_disableuser_kafka.png?raw=true)
+![Sample rulebook](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/eda_disable_user_syslog.png?raw=true)
 
 
 ## CyberArk PTA Syslog to EDA event source (UDP Protocol)
@@ -154,5 +154,5 @@ Please refer to the following documentation for instructions on how to setup PTA
 In the PTA server's local systemparm.properties file have a line with:
 
 ```
-syslog_outbound=[{"siem": "SIEM", "format": "CEF", "host": "ANSIBLE_EDA_SERVER", "port": << PORT FOR THE ANSIBLE EVENT-SOURCE EDA PLUGIN >>, "protocol": "UDP"}]
+syslog_outbound=[{\"siem\": \"SIEM\", \"format\": \"CEF\", \"host\": \"ANSIBLE_EDA_SERVER\", \"port\": << PORT FOR THE ANSIBLE EVENT-SOURCE EDA PLUGIN >>, \"protocol\": \"UDP\"}]
 ```

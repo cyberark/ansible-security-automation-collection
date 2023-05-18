@@ -104,7 +104,7 @@ def parse(str_input):
                         del values[key]
     else:
         # return None if our regex had now output
-        logger.warning('Could not parse record. Is it valid CEF format?')
+        # logger.warning('Could not parse record. Is it valid CEF format?')
         return None
 
     # Now we're done!
