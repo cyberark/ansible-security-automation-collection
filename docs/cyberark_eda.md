@@ -4,11 +4,17 @@ The CyberArk PAM Self-Hosted solution can be configured to export syslogs to Ans
 
 The following options will be available to configure CyberArk as Event Source:
 
+**VAULT**
 * CyberArk to Rsyslog to EDA Webhook
 * CyberArk to Rsyslog to EDA Kafka Topic
 * CyberArk Syslog as EDA event source (UDP Protocol)
 
+**PTA**
+* CyberArk PTA Syslog to EDA event source (UDP Protocol)
+
+
 **NOTE**: For Rsyslog work, it was tested successfully with rsyslogd 8.2306.0.master (aka 2023.06) running on Ubuntu
+
 
 ## CyberArk to Rsyslog to EDA Webhook
 
@@ -136,3 +142,17 @@ SyslogServerPort=1514
 SyslogServerProtocol=UDP
 ```
 ![Sample rulebook](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/eda_disableuser_kafka.png?raw=true)
+
+
+## CyberArk PTA Syslog to EDA event source (UDP Protocol)
+
+![CyberArk PTA Syslog to EDA event source (UDP Protocol)](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/images/eda-pta-syslog.png?raw=true)
+
+Please refer to the following documentation for instructions on how to setup PTA to sent data to SIEM:
+[Send PTA syslog Records to SIEM](https://docs.cyberark.com/Product-Doc/OnlineHelp/PAS/Latest/en/Content/PTA/Outbound-Sending-%20PTA-syslog-Records-to-SIEM.htm?tocpath=Administrator%7CComponents%7CPrivileged%20Threat%20Analytics%7CConfigure%20Privileged%20Threat%20Analytics%7CSend%20PTA%20Data%7CSend%20PTA%20syslog%20Records%20to%20SIEM%7C_____0)
+
+In the PTA server's local systemparm.properties file have a line with:
+
+```
+syslog_outbound=[{"siem": "SIEM", "format": "CEF", "host": "ANSIBLE_EDA_SERVER", "port": << PORT FOR THE ANSIBLE EVENT-SOURCE EDA PLUGIN >>, "protocol": "UDP"}]
+```
