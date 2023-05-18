@@ -19,7 +19,7 @@ Follow the steps under [Security Information and Event Management (SIEM) Applica
 
 * Copy the [cyberark-eda-json-v1.0.xsl](https://github.com/cyberark/ansible-security-automation-collection/blob/master/plugins/event_source/cyberark-eda-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
 * See sample syslog configuration for DBPARM.ini below
-* Recommended to use TCP and port 514 as it’s default rsyslog port.
+* Recommended to use TCP and port 514 as it's default rsyslog port.
 
 ```
 [SYSLOG]
@@ -77,7 +77,7 @@ Follow the steps under [Security Information and Event Management (SIEM) Applica
 
 * Copy the [cyberark-eda-json-v1.0.xsl](https://github.com/cyberark/ansible-security-automation-collection/blob/master/plugins/event_source/cyberark-eda-json-v1.0.xsl) XSL Translator file to the Server\Syslog folder.
 * See sample syslog configuration for DBPARM.ini below
-* Recommended to use TCP and port 514 as it’s default rsyslog port.
+* Recommended to use TCP and port 514 as it's default rsyslog port.
 
 ```
 [SYSLOG]
@@ -104,7 +104,7 @@ if ($hostname == 'VAULT') then
 Hostname will need be changed accordingly to your environment. If the syslog message are from a vault server, it will forward to a Kafka topic on Kafka server in ubuntu on port 9092.
 
 ### Kafka Topic
-Rsyslog use the omkafka plugin to forward the vault rsyslog to the Kafka topic. This plugin may need to be install by your admin as it’s not enabled by default.
+Rsyslog use the omkafka plugin to forward the vault rsyslog to the Kafka topic. This plugin may need to be install by your admin as it's not enabled by default.
 ```
 yum install rsyslog-kafka
 ```
