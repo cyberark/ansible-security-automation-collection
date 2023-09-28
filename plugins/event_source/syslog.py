@@ -1,7 +1,3 @@
-#!/usr/bin/python3
-# Copyright: (c) 2017, Ansible Project
-# GNU General Public License v3.0+
-# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
 
 
@@ -165,7 +161,7 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     finally:
         transport.close()
 
-     
+
 if __name__ == "__main__":
 
     class MockQueue:
