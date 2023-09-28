@@ -15,7 +15,8 @@
   args:
     warn: false
 
-- debug: msg="status of service RC={{service_already_running.rc}}"
+- name: debug message
+  debug: msg="status of service RC={{ service_already_running.rc }}"
 
 - import_tasks: installAIMProvider.yml
   when: (state == "present" and service_already_running.rc != 0)

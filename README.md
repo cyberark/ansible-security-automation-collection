@@ -17,6 +17,7 @@ The following modules will allow CyberArk administrators to automate the followi
 
 #### Requirements
 
+- Ansible Core 2.13.x or above
 - CyberArk Privileged Account Security Web Services SDK
 - CyberArk AAM Central Credential Provider (**Only required for cyberark_credential**)
 
