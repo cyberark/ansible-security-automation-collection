@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright: (c) 2017, Ansible Project
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -22,9 +22,9 @@ Arguments:
 import asyncio
 import json
 import logging
-import socketserver
 from typing import Any, Dict
 import re
+
 
 def parse(str_input):
     """
@@ -32,7 +32,7 @@ def parse(str_input):
     and the extension data.
     """
 
-    logger = logging.getLogger()  
+    logger = logging.getLogger()
     # Create the empty dict we'll return later
     values = dict()
 
@@ -53,11 +53,11 @@ def parse(str_input):
         spl = re.split(r'(?<!\\)\|', header)
 
         # If the input entry had any blanks in the required headers, that's wrong
-        # and we should return.  Note we explicitly don't check the last item in the 
+        # and we should return.  Note we explicitly don't check the last item in the
         # split list becuase the header ends in a '|' which means the last item
         # will always be an empty string (it doesn't exist, but the delimiter does).
         if "" in spl[0:-1]:
-            logger.warning(f'Blank field(s) in CEF header. Is it valid CEF format?')
+            logger.warning("Blank field(s) in CEF header. Is it valid CEF format?")
             return None
 
         # Since these values are set by their position in the header, it's
@@ -108,7 +108,7 @@ def parse(str_input):
         return None
 
     # Now we're done!
-    logger.debug('Returning values: ' + str(values))
+    logger.debug("Returning values: %s", str(values))
     return values
 
 
@@ -116,36 +116,38 @@ class SyslogProtocol(asyncio.DatagramProtocol):
     def __init__(self, edaQueue):
         super().__init__()
         self.edaQueue = edaQueue
+
     def connection_made(self, transport) -> "Used by asyncio":
         self.transport = transport
-        
+
     def datagram_received(self, data, addr):
-        asyncio.get_event_loop().create_task(self.datagram_received_async( data, addr))
+        asyncio.get_event_loop().create_task(self.datagram_received_async(data, addr))
 
     async def datagram_received_async(self, indata, addr) -> "Main entrypoint for processing message":
         # Syslog event data received, and processed for EDA
-        logger = logging.getLogger()  
+        logger = logging.getLogger()
         rcvdata = indata.decode()
-        logger.info(f"Received Syslog message: {rcvdata}")
+        logger.info("Received Syslog message: %s", rcvdata)
         data = parse(rcvdata)
 
         if data is None:
             # if not CEF, we will try JSON load of the text from first curly brace
             try:
                 value = rcvdata[rcvdata.index("{"):len(rcvdata)]
-                #logger.info("value after encoding:%s", value1)
+                # logger.info("value after encoding:%s", value1)
                 data = json.loads(value)
-                #logger.info("json:%s", data)
+                # logger.info("json:%s", data)
             except json.decoder.JSONDecodeError as jerror:
                 logger.error(jerror)
                 data = rcvdata
             except UnicodeError as e:
                 logger.error(e)
-        
+
         if data:
-            #logger.info("json data:%s", data)
+            # logger.info("json data:%s", data)
             queue = self.edaQueue
             await queue.put({"cyberark": data})
+
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     logger = logging.getLogger()
@@ -156,18 +158,18 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     transport, protocol = await asyncio.get_running_loop().create_datagram_endpoint(
         lambda: SyslogProtocol(queue),
         local_addr=((host, port)))
-    logger.info(f"Starting cyberark.pas.syslog [Host={host}, port={port}]")
+    logger.info("Starting cyberark.pas.syslog [Host=%s, port=%s]", host, port)
     try:
         while True:
             await asyncio.sleep(3600)  # Serve for 1 hour.
     finally:
         transport.close()
+
      
-            
 if __name__ == "__main__":
 
     class MockQueue:
         async def put(self, event):
-            pass #print(event)
+            pass
 
     asyncio.run(main(MockQueue(), {}))
