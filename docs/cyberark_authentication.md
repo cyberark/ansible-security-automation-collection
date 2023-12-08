@@ -75,7 +75,7 @@ In addition to SSL, use Client Authentication to authenticate Ansible using a cl
 
 ```yaml
 - name: Logon to CyberArk Vault using PAS Web Services SDK - use_shared_logon_authentication
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     use_shared_logon_authentication: true
 ```
@@ -87,7 +87,7 @@ Users can authenticate using **CyberArk**, **LDAP** or **RADIUS** authentication
 
 ```yaml
 - name: Logon to CyberArk Vault using PAS Web Services SDK - Not use_shared_logon_authentication
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
@@ -98,7 +98,7 @@ This method logs off the user and removes the Vault session.
 
 ```yaml
 - name: Logoff from CyberArk Vault
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}
 ```

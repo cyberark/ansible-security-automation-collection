@@ -96,12 +96,12 @@ This playbook will check if username `admin` exists, if it does not, it will pro
 
 ```yaml
 - name: Logon to CyberArk Vault using PAS Web Services SDK
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: https://components.cyberark.local
     use_shared_logon_authentication: true
 
 - name: Create user, add to Group
-  cyberark_user:
+  cyberark.pas.cyberark_user:
     username: admin
     first_name: "Cyber"
     last_name: "Admin"
@@ -115,7 +115,7 @@ This playbook will check if username `admin` exists, if it does not, it will pro
   register: cyberarkaction
 
 - name: Logoff from CyberArk Vault
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     state: absent
     cyberark_session: '{{ cyberark_session }}'
 ```
@@ -124,40 +124,40 @@ This playbook will identify the user and delete it from the CyberArk Vault based
 
 ```yaml
 - name: Logon to CyberArk Vault using PAS Web Services SDK - use_shared_logon_authentication
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     use_shared_logon_authentication: true
 
 - name: Removing a CyberArk User
-  cyberark_user:
+  cyberark.pas.cyberark_user:
     username: "ansibleuser"
     state: absent
     cyberark_session: "{{ cyberark_session }}"
   register: cyberarkaction
     
 - name: Logoff from CyberArk Vault
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}"
 ```
 This playbook is an example of disabling a user based on the `disabled: true` value with that authentication using the credential set in Tower.
 ```yaml
 - name: Logon to CyberArk Vault using PAS Web Services SDK - Not use_shared_logon_authentication
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: "{{ web_services_base_url }}"
     username: "{{ password_object.password }}"
     password: "{{ password_object.passprops.username }}"
     use_shared_logon_authentication: false
     
 - name: Disabling a CyberArk User
-  cyberark_user:
+  cyberark.pas.cyberark_user:
     username: "ansibleuser"
     disabled: true
     cyberark_session: "{{ cyberark_session }}"
   register: cyberarkaction
 
 - name: Logoff from CyberArk Vault
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}"
 ```
