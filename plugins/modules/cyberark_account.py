@@ -198,6 +198,40 @@ options:
                         Platform's definition.
                 aliases: [Port, ExtrPass1Name, database]
                 type: str
+    link_account:
+        description:
+            - Object containing key-value pairs to associate with the account,
+              as defined by the account platform. These properties are
+              validated against the mandatory and optional properties of the
+              specified platform's definition. Optional properties that do not
+              exist on the account will not be returned here. Internal
+              properties are not returned.
+        required: false
+        type: dict
+        description:
+            - Set of parameters associated with the management of the
+              credential.
+        required: false
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - The linked account name.
+                default: False
+                type: str
+            folder:
+                description:
+                    - The folder in which the linked account is stored.
+                type: str
+            safe:
+                description:
+                    - The Safe in which the linked account is stored.
+                type: str
+            extraPasswordIndex:
+                description:
+                    - The linked account's extra password index.
+                type: str
+    
 """
 
 EXAMPLES = """
@@ -279,7 +313,7 @@ result:
     contains:
         address:
             description:
-                - The adress of the endpoint where the privileged account is
+                - The address of the endpoint where the privileged account is
                   located.
             returned: successful addition and modification
             type: str
@@ -317,6 +351,22 @@ result:
                     sample:
                         - "LogonDomain": "cyberark"
                         - "Port": "22"
+        link_account:
+            description:
+                - Object containing key-value pairs to associate with the
+                  account
+            returned: successful addition and modification
+            type: complex
+            contains:
+                KEY VALUE:
+                    description:
+                        - Object containing key-value pairs to associate with the
+                          account, as defined by the account platform.
+                    returned: successful addition and modification
+                    type: str
+                    sample:
+                        - "safe": "cyberark"
+                        - "name": "22"
         platformId:
             description:
                 - The PolicyID of the Platform that is to be managing the
@@ -395,6 +445,7 @@ ansible_specific_parameters = [
     "secret_management.management_action",
     "secret_management.new_secret",
     "management_action",
+    "link_account",
     "secret_management.perform_management_action",
 ]
 
@@ -416,6 +467,7 @@ cyberark_reference_fieldnames = {
     "platform_id": "platformId",
     "secret_type": "secretType",
     "platform_account_properties": "platformAccountProperties",
+    "link_account": "linkAccount",
     "secret_management": "secretManagement",
     "manual_management_reason": "manualManagementReason",
     "automatic_management_enabled": "automaticManagementEnabled",
@@ -430,6 +482,7 @@ ansible_reference_fieldnames = {
     "platformId": "platform_id",
     "secretType": "secret_type",
     "platformAccountProperties": "platform_account_properties",
+    "linkAccount": "link_account",
     "secretManagement": "secret_management",
     "manualManagementReason": "manual_management_reason",
     "automaticManagementEnabled": "automatic_management_enabled",
@@ -638,6 +691,7 @@ def update_account(module, existing_account):
                         headers=headers,
                         data=json.dumps(individual_payload),
                         validate_certs=validate_certs,
+                        timeout=60
                     )
 
                     result = {"result": json.loads(response.read())}
@@ -735,6 +789,17 @@ def add_account(module):
                         ] = deep_get(
                             module.params[parameter_name], dict_key, _empty, False
                         )
+                    if (
+                        parameter_name + "." + dict_key
+                        not in ansible_specific_parameters
+                        and module.params[parameter_name][dict_key] is not None
+                        and isinstance(module.params[parameter_name][dict_key], dict)
+                    ):
+                        for key, value in module.params[parameter_name][dict_key].items():
+                            payload[cyberark_property_name] = deep_get(
+                                value, key, _empty, False
+                        )
+
             else:
                 if parameter_name not in cyberark_reference_fieldnames:
                     module_parm_value = deep_get(
@@ -775,6 +840,7 @@ def add_account(module):
                 headers=headers,
                 data=json.dumps(payload),
                 validate_certs=validate_certs,
+                timeout=60
             )
 
             result = {"result": json.loads(response.read())}
@@ -842,6 +908,7 @@ def delete_account(module, existing_account):
                 method=HTTPMethod,
                 headers=headers,
                 validate_certs=validate_certs,
+                timeout=60
             )
 
             result = {"result": None}
@@ -877,6 +944,114 @@ def delete_account(module, existing_account):
                 status_code=-1,
             )
 
+def linked_account(module, existing_account):
+
+    logging.debug("Linking Account")
+
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+    payload = {}
+    # Prepare result, end_point, and headers
+
+    # Link Add
+    link_name = deep_get(
+        module.params, "link_account.name", "NOT_FOUND", False
+    )
+    link_folder = deep_get(
+        module.params, "link_account.folder", "NOT_FOUND", False
+    )
+    link_safe = deep_get(
+        module.params, "link_account.safe", "NOT_FOUND", False
+    )
+
+    existing_account_id = None
+    if existing_account is not None:
+        existing_account_id = existing_account["id"]
+    elif module.check_mode:
+        existing_account_id = 9999
+
+    if (
+        link_name != "NOT_FOUND"
+        and link_folder != "NOT_FOUND"
+        and link_safe != "NOT_FOUND"
+    ):
+        logging.debug("Add Link Account action")
+        end_point = (
+            "/PasswordVault/API/Accounts/%s/LinkAccount"
+        ) % existing_account_id
+        payload["name"] = link_name
+        payload["folder"] = link_folder
+        payload["safe"] = link_safe
+        payload["extraPasswordIndex"] = 1
+
+    if end_point is not None:
+
+        if module.check_mode:
+            logging.debug("Proceeding with Credential Link (CHECK_MODE)")
+            return (True, result, -1)
+        else:
+            logging.debug("Proceeding with Link add account")
+
+            result = {}
+
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": cyberark_session["token"],
+            }
+            HTTPMethod = "POST"
+
+            try:
+                if module.check_mode:
+                    logging.debug("Proceeding with Link Account (CHECK_MODE)")
+                    return (True, {"result": None}, -1)
+                else:
+                    logging.debug("Proceeding with Link Account")
+                    response = open_url(
+                        api_base_url + end_point,
+                        method=HTTPMethod,
+                        headers=headers,
+                        data=json.dumps(payload),
+                        validate_certs=validate_certs,
+                        timeout=60
+                    )
+                    result = {"result": None}
+                    return (True, result, response.getcode())
+
+            except (HTTPError, HTTPException) as http_exception:
+
+                if isinstance(http_exception, HTTPError):
+                    res = json.load(http_exception)
+                else:
+                    res = to_text(http_exception)
+
+                module.fail_json(
+                    msg=(
+                        "Error while performing link_account."
+                        "Please validate parameters provided."
+                        "\n*** end_point=%s%s\n ==> %s"
+                    )
+                    % (api_base_url, end_point, res),
+                    headers=headers,
+                    payload=payload,
+                    status_code=http_exception.code,
+                )
+
+            except Exception as unknown_exception:
+
+                module.fail_json(
+                    msg=(
+                        "Unknown error while performing link_account."
+                        "\n*** end_point=%s%s\n%s"
+                        % (api_base_url, end_point, to_text(unknown_exception))
+                    ),
+                    headers=headers,
+                    payload=payload,
+                    status_code=-1,
+                )
+
+    else:
+        return (False, result, -1)
 
 def reset_account_if_needed(module, existing_account):
 
@@ -967,6 +1142,7 @@ def reset_account_if_needed(module, existing_account):
                     headers=headers,
                     data=json.dumps(payload),
                     validate_certs=validate_certs,
+                    timeout=60
                 )
 
                 return (True, result, response.getcode())
@@ -1096,6 +1272,7 @@ def get_account(module):
             method="GET",
             headers=headers,
             validate_certs=validate_certs,
+            timeout=60
         )
 
         result_string = response.read()
@@ -1239,6 +1416,7 @@ def main():
             },
         },
         "platform_account_properties": {"required": False, "type": "dict"},
+        "link_account" : {"required": False, "type": "dict"},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
@@ -1266,6 +1444,14 @@ def main():
             (changed, result, status_code) = update_account(module, account_record)
         else:  # Account does not exist
             (changed, result, status_code) = add_account(module)
+
+        # Link account
+        if "link_account" in list(module.params.keys()):
+            link_account = module.params["link_account"]
+            if link_account is not None and "name" in list(link_account.keys()):
+                (account_link, no_result, no_status_code) = linked_account(
+                module, result["result"]
+            )
 
         perform_management_action = "always"
         if "secret_management" in list(module.params.keys()):
