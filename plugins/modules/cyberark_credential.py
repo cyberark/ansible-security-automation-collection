@@ -98,6 +98,12 @@ options:
             - Reason for requesting credential if required by policy;
             - It must be specified if the Policy managing the object
             - requires it.
+    path:
+        type: str
+        required: false
+        description:
+            - String override for the context path
+
 """
 
 EXAMPLES = """
@@ -225,17 +231,22 @@ def retrieve_credential(module):
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
+    path = "/AIMWebService/api/Accounts"
 
     if "client_cert" in module.params:
         client_cert = module.params["client_cert"]
     if "client_key" in module.params:
         client_key = module.params["client_key"]
 
+    if "path" in module.params:
+        path = module.params["path"] 
+
     end_point = (
-        "/AIMWebService/api/Accounts?AppId=%s&Query=%s&"
+        "%s?AppId=%s&Query=%s&"
         "ConnectionTimeout=%s&QueryFormat=%s"
         "&FailRequestOnPasswordChange=%s"
     ) % (
+        path,
         quote(app_id),
         quote(query),
         connection_timeout,

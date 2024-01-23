@@ -124,4 +124,14 @@ options:
   result:
      { api_base_url }"/AIMWebService/api/Accounts?AppId="{ app_id }"&Query="{ query }"&ConnectionTimeout="{ connection_timeout }"&QueryFormat="{ query_format }"&FailRequestOnPasswordChange="{ fail_request_on_password_change }
      
+- name: credential retrieval custom path
+  cyberark_credential:
+    api_base_url: "http://10.10.0.1"
+    app_id: "TestID"
+    query: "Safe=test;UserName=admin"
+    path: AimWebServiceCustom
+  register: result
+  
+  result:
+     { api_base_url } { path } "?AppId="{ app_id }"&Query="{ query }
 ```
