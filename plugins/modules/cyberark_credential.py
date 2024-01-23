@@ -239,7 +239,7 @@ def retrieve_credential(module):
         client_key = module.params["client_key"]
 
     if "path" in module.params:
-        path = module.params["path"] 
+        path = module.params["path"]
 
     end_point = (
         "%s?AppId=%s&Query=%s&"
