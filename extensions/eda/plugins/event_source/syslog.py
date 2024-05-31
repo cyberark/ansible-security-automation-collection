@@ -1,20 +1,15 @@
-from __future__ import (absolute_import, division, print_function)
-
-
-__metaclass__ = type
-
-"""
-syslog.py
+"""syslog.py.
 
 An ansible-rulebook event source module for receiving events via a syslog.
 
 Arguments:
+---------
     host: The hostname to listen to. Set to 0.0.0.0 to listen on all
           interfaces. Defaults to 127.0.0.1
     port: The TCP port to listen to.  Defaults to 1514
 
 """
-
+from __future__ import (absolute_import, division, print_function)
 import asyncio
 import json
 import logging
@@ -22,15 +17,18 @@ from typing import Any, Dict
 import re
 
 
-def parse(str_input):
-    """
+__metaclass__ = type
+BASIC_CEF_HEADER_SIZE = 6
+
+def parse(str_input: str) -> dict[str, str]:
+    """parse.
+
     Parse a string in CEF format and return a dict with the header values
     and the extension data.
     """
-
     logger = logging.getLogger()
     # Create the empty dict we'll return later
-    values = dict()
+    values = {}
 
     # This regex separates the string into the CEF header and the extension
     # data.  Once we do this, it's easier to use other regexes to parse each
@@ -64,7 +62,7 @@ def parse(str_input):
         values["DeviceEventClassID"] = spl[4]
         values["Name"] = spl[5]
         values["DeviceName"] = spl[5]
-        if len(spl) > 6:
+        if len(spl) > BASIC_CEF_HEADER_SIZE:
             values["Severity"] = spl[6]
             values["DeviceSeverity"] = spl[6]
 
@@ -75,7 +73,7 @@ def parse(str_input):
         cef_start = spl[0].find('CEF')
         if cef_start == -1:
             return None
-        (cef, version) = spl[0][cef_start:].split(':')
+        (_, version) = spl[0][cef_start:].split(':')
         values["CEFVersion"] = version
 
         # The ugly, gnarly regex here finds a single key=value pair,
@@ -100,58 +98,61 @@ def parse(str_input):
                         del values[key]
     else:
         # return None if our regex had now output
-        # logger.warning('Could not parse record. Is it valid CEF format?')
         return None
 
     # Now we're done!
     logger.debug("Returning values: %s", str(values))
     return values
 
-
 class SyslogProtocol(asyncio.DatagramProtocol):
-    def __init__(self, edaQueue):
+    """Provides Syslog Protocol functionality."""
+
+    def __init__(self, edaqueue: asyncio.Queue) -> None:
+        """Init Constructor."""
         super().__init__()
-        self.edaQueue = edaQueue
+        self.edaQueue = edaqueue
+        self.transport = None
 
     def connection_made(self, transport) -> "Used by asyncio":
+        """connection_made: Standard for asyncio."""
         self.transport = transport
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data, addr) -> "Used by asyncio":
+        """datagram_received: Standard method for protocol."""
         asyncio.get_event_loop().create_task(self.datagram_received_async(data, addr))
 
-    async def datagram_received_async(self, indata, addr) -> "Main entrypoint for processing message":
+    async def datagram_received_async(self, indata, addr) -> "Main entry for processing message":
+        """datagram_received_async: Standard method for protocol."""
         # Syslog event data received, and processed for EDA
         logger = logging.getLogger()
         rcvdata = indata.decode()
-        logger.info("Received Syslog message: %s", rcvdata)
+        logger.info("Received Syslog message: %s - addr: %s", rcvdata, addr)
         data = parse(rcvdata)
 
         if data is None:
             # if not CEF, we will try JSON load of the text from first curly brace
             try:
                 value = rcvdata[rcvdata.index("{"):len(rcvdata)]
-                # logger.info("value after encoding:%s", value1)
                 data = json.loads(value)
-                # logger.info("json:%s", data)
-            except json.decoder.JSONDecodeError as jerror:
-                logger.error(jerror)
+            except json.decoder.JSONDecodeError as jerror: # noqa: F841
+                logger.exception("JSON Decode Error")
                 data = rcvdata
-            except UnicodeError as e:
-                logger.error(e)
+            except UnicodeError as e: # noqa: F841
+                logger.exception("UnicodeError")
 
         if data:
-            # logger.info("json data:%s", data)
             queue = self.edaQueue
             await queue.put({"cyberark": data})
 
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
+    """Perform main functionality."""
     logger = logging.getLogger()
 
-    loop = asyncio.get_event_loop()
+    _ = asyncio.get_event_loop()
     host = args.get("host") or '0.0.0.0'
     port = args.get("port") or 1514
-    transport, protocol = await asyncio.get_running_loop().create_datagram_endpoint(
+    transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(
         lambda: SyslogProtocol(queue),
         local_addr=((host, port)))
     logger.info("Starting cyberark.pas.syslog [Host=%s, port=%s]", host, port)
@@ -165,7 +166,9 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 if __name__ == "__main__":
 
     class MockQueue:
-        async def put(self, event):
-            pass
+        """simple mock queue."""
+
+        async def put(self, event) -> None:
+            """put: Put method."""
 
     asyncio.run(main(MockQueue(), {}))
