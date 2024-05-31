@@ -20,6 +20,7 @@ import re
 __metaclass__ = type
 BASIC_CEF_HEADER_SIZE = 6
 
+
 def parse(str_input: str) -> dict[str, str]:
     """parse.
 
@@ -73,7 +74,7 @@ def parse(str_input: str) -> dict[str, str]:
         cef_start = spl[0].find('CEF')
         if cef_start == -1:
             return None
-        (_, version) = spl[0][cef_start:].split(':')
+        (cef, version) = spl[0][cef_start:].split(':')
         values["CEFVersion"] = version
 
         # The ugly, gnarly regex here finds a single key=value pair,
@@ -103,6 +104,7 @@ def parse(str_input: str) -> dict[str, str]:
     # Now we're done!
     logger.debug("Returning values: %s", str(values))
     return values
+
 
 class SyslogProtocol(asyncio.DatagramProtocol):
     """Provides Syslog Protocol functionality."""
@@ -134,10 +136,10 @@ class SyslogProtocol(asyncio.DatagramProtocol):
             try:
                 value = rcvdata[rcvdata.index("{"):len(rcvdata)]
                 data = json.loads(value)
-            except json.decoder.JSONDecodeError as jerror: # noqa: F841
+            except json.decoder.JSONDecodeError as jerror:   # noqa: F841
                 logger.exception("JSON Decode Error")
                 data = rcvdata
-            except UnicodeError as e: # noqa: F841
+            except UnicodeError as e:   # noqa: F841
                 logger.exception("UnicodeError")
 
         if data:
@@ -149,10 +151,10 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     """Perform main functionality."""
     logger = logging.getLogger()
 
-    _ = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop()
     host = args.get("host") or '0.0.0.0'
     port = args.get("port") or 1514
-    transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(
+    transport, protocol = await asyncio.get_running_loop().create_datagram_endpoint(
         lambda: SyslogProtocol(queue),
         local_addr=((host, port)))
     logger.info("Starting cyberark.pas.syslog [Host=%s, port=%s]", host, port)
