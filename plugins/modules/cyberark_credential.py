@@ -335,6 +335,7 @@ def main():
         "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False, "no_log": True},
+        "path": {"type": "str", "required": False, "no_log": False},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
