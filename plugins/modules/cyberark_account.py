@@ -231,9 +231,7 @@ EXAMPLES = """
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
 
-    - name:
-        - Rotate credential via reconcile and providing the password to
-          bechanged to.
+    - name: Rotate credential via reconcile and providing the password to be changed to
       cyberark_account:
         identified_by: "address,username"
         safe: "Domain_Admins"
@@ -246,6 +244,18 @@ EXAMPLES = """
             new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
             management_action: "reconcile"
             automatic_management_enabled: true
+        state: present
+        cyberark_session: "{{ cyberark_session }}"
+      register: reconcileaccount
+
+    - name: Update password only in VAULT
+      cyberark.pas.cyberark_account:
+        identified_by: "address,username"
+        safe: "Domain_Admins"
+        address: "prod.cyberark.local"
+        username: "admin"
+        platform_id: Generic
+        new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: reconcileaccount
