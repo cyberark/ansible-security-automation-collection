@@ -1,4 +1,4 @@
-## 1.0.27
+## 1.0.29
 
 - Fixed Pep8 & pylint for publication in Automation Hub
 
