@@ -281,7 +281,7 @@ options:
         new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
         state: present
         cyberark_session: "{{ cyberark_session }}"
-      register: reconcileaccount
+      register: updateaccount
 
     - name: Logoff from CyberArk Vault
       cyberark.pas.cyberark_authentication:
