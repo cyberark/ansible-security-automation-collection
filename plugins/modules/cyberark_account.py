@@ -16,15 +16,15 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: cyberark_account
-short_description: Module for CyberArk Account object creation, deletion, and
-    modification using PAS Web Services SDK.
+short_description: Module for CyberArk Account object creation, deletion,
+    modification, and password retrieval using PAS Web Services SDK.
 author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - James Stutes (@jimmyjamcabd)
 version_added: '1.0.0'
 description:
-    - Creates a URI for adding, deleting, modifying a privileged credential
+    - Creates a URI for adding, deleting, modifying, and retrieving a privileged credential
       within the Cyberark Vault.  The request uses the Privileged Account
       Security Web Services SDK.
 
@@ -32,12 +32,12 @@ description:
 options:
     state:
         description:
-            - Assert the desired state of the account C(present) to creat or
+            - Assert the desired state of the account C(present) to create or
               update and account object. Set to C(absent) for deletion of an
-              account object.
+              account object. Set to C(retrieve) to get the account object including the password.
         required: false
         default: present
-        choices: [present, absent]
+        choices: [present, absent, retrieve]
         type: str
     logging_level:
         description:
@@ -249,6 +249,16 @@ EXAMPLES = """
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: reconcileaccount
+
+    - name: Retrieve account and password
+      cyberark.pas.cyberark_account:
+        identified_by: "address,username"
+        safe: "Domain_Admins"
+        address: "prod.cyberark.local"
+        username: "admin"
+        state: retrieve
+        cyberark_session: "{{ cyberark_session }}"
+      register: retrieveaccount
 
     - name: Logoff from CyberArk Vault
       cyberark_authentication:

@@ -1,3 +1,7 @@
+## 1.0.28
+
+- Added ability to retrieve password
+
 ## 1.0.27
 
 - Fixed Pep8 & pylint for publication in Automation Hub

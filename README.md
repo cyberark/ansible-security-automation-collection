@@ -48,7 +48,8 @@ None.
 - Add Privileged Account to the EPV
 - Delete account objects
 - Modify account properties
-- Rotatate privileged credentials<br>
+- Rotatate privileged credentials
+- Retrieve account password<br>
 [Playbooks and Module Info](https://github.com/cyberark/ansible-security-automation-collection/blob/master/docs/cyberark_account.md)
 
 #### cyberark_credential

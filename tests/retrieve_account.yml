@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+
+  collections:
+    - cyberark.pas
+
+  tasks:
+
+    - name: Logon to CyberArk Vault using PAS Web Services SDK
+      cyberark_authentication:
+        api_base_url: "http://components.cyberark.local"
+        validate_certs: false
+        username: "bizdev"
+        password: "Cyberark1"
+
+
+    - name: Retrieve account and password
+      cyberark.pas.cyberark_account:
+        identified_by: "address,username"
+        safe: "Test"
+        address: "cyberark.local"
+        username: "cyberark-administrator"
+        state: retrieve
+        cyberark_session: "{{ cyberark_session }}"
+      register: retrieveaccount
+
+    - name: Debug message
+      debug:
+        var: retrieveaccount
+
+    - name: Logoff from CyberArk Vault
+      cyberark_authentication:
+        state: absent
+        cyberark_session: "{{ cyberark_session }}"
