@@ -1189,12 +1189,89 @@ def get_account(module):
         )
 
 
+def retrieve_password(module, existing_account):
+    logging.debug("Retrieving Password")
+
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+
+    result = existing_account
+    HTTPMethod = "POST"
+    end_point = "/PasswordVault/api/Accounts/%s/Password/Retrieve" % existing_account["id"]
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
+
+    try:
+
+        response = open_url(
+            api_base_url + end_point,
+            method=HTTPMethod,
+            headers=headers,
+            validate_certs=validate_certs,
+        )
+
+        password = response.read().decode('utf-8')
+
+        if not (password.startswith('"') and password.endswith('"')):
+            module.fail_json(
+                msg=(
+                    "Error while performing retrieve_password."
+                    "The returned value was not formatted as expected."
+                    "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+                ),
+                headers=headers,
+                status_code=http_exception.code,
+            )
+
+        password = password[1:-1]
+
+        result["password"] = password
+
+        logging.debug("Password Retrieved")
+
+        return (False, result, response.getcode())
+
+    except (HTTPError, HTTPException) as http_exception:
+
+        if isinstance(http_exception, HTTPError):
+            res = json.load(http_exception)
+        else:
+            res = to_text(http_exception)
+
+        module.fail_json(
+            msg=(
+                "Error while performing retrieve_password."
+                "Please validate parameters provided."
+                "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+            ),
+            headers=headers,
+            status_code=http_exception.code,
+        )
+
+    except Exception as unknown_exception:
+
+        module.fail_json(
+            msg=(
+                "Unknown error while performing retrieve_password."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
+            headers=headers,
+            status_code=-1,
+        )
+
+
 def main():
 
     fields = {
         "state": {
             "type": "str",
-            "choices": ["present", "absent"],
+            "choices": ["present", "absent", "retrieve"],
             "default": "present",
         },
         "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
@@ -1301,6 +1378,9 @@ def main():
 
     elif found and state == "absent":
         (changed, result, status_code) = delete_account(module, account_record)
+
+    elif found and state == "retrieve":
+        (changed, result, status_code) = retrieve_password(module, account_record)
 
     module.exit_json(changed=changed, result=result, status_code=status_code)
 
