@@ -270,18 +270,6 @@ EXAMPLES = """
         cyberark_session: "{{ cyberark_session }}"
       register: retrieveaccount
 
-    - name: Update password only in VAULT
-      cyberark.pas.cyberark_account:
-        identified_by: "address,username"
-        safe: "Domain_Admins"
-        address: "prod.cyberark.local"
-        username: "admin"
-        platform_id: Generic
-        new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
-        state: present
-        cyberark_session: "{{ cyberark_session }}"
-      register: updateaccount
-
     - name: Logoff from CyberArk Vault
       cyberark_authentication:
         state: absent
