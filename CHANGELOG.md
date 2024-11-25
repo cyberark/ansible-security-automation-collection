@@ -1,10 +1,10 @@
+## 1.0.30
+
+- Added ability to retrieve password
+
 ## 1.0.29
 
 - Added documentation to update password only in Vault
-
-## 1.0.28
-
-- Added ability to retrieve password
 
 ## 1.0.27
 
