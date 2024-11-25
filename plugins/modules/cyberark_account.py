@@ -16,15 +16,15 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: cyberark_account
-short_description: Module for CyberArk Account object creation, deletion, and
-    modification using PAS Web Services SDK.
+short_description: Module for CyberArk Account object creation, deletion,
+    modification, and password retrieval using PAS Web Services SDK.
 author:
     - CyberArk BizDev (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - James Stutes (@jimmyjamcabd)
 version_added: '1.0.0'
 description:
-    - Creates a URI for adding, deleting, modifying a privileged credential
+    - Creates a URI for adding, deleting, modifying, and retrieving a privileged credential
       within the Cyberark Vault.  The request uses the Privileged Account
       Security Web Services SDK.
 
@@ -32,12 +32,12 @@ description:
 options:
     state:
         description:
-            - Assert the desired state of the account C(present) to creat or
+            - Assert the desired state of the account C(present) to create or
               update and account object. Set to C(absent) for deletion of an
-              account object.
+              account object. Set to C(retrieve) to get the account object including the password.
         required: false
         default: present
-        choices: [present, absent]
+        choices: [present, absent, retrieve]
         type: str
     logging_level:
         description:
@@ -247,7 +247,7 @@ EXAMPLES = """
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: reconcileaccount
-
+    
     - name: Update password only in VAULT
       cyberark.pas.cyberark_account:
         identified_by: "address,username"
@@ -259,6 +259,16 @@ EXAMPLES = """
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: updateaccount
+
+    - name: Retrieve account and password
+      cyberark.pas.cyberark_account:
+        identified_by: "address,username"
+        safe: "Domain_Admins"
+        address: "prod.cyberark.local"
+        username: "admin"
+        state: retrieve
+        cyberark_session: "{{ cyberark_session }}"
+      register: retrieveaccount
 
     - name: Logoff from CyberArk Vault
       cyberark_authentication:
@@ -1199,12 +1209,89 @@ def get_account(module):
         )
 
 
+def retrieve_password(module, existing_account):
+    logging.debug("Retrieving Password")
+
+    cyberark_session = module.params["cyberark_session"]
+    api_base_url = cyberark_session["api_base_url"]
+    validate_certs = cyberark_session["validate_certs"]
+
+    result = existing_account
+    HTTPMethod = "POST"
+    end_point = "/PasswordVault/api/Accounts/%s/Password/Retrieve" % existing_account["id"]
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": cyberark_session["token"],
+        "User-Agent": "CyberArk/1.0 (Ansible; cyberark.pas)"
+    }
+
+    try:
+
+        response = open_url(
+            api_base_url + end_point,
+            method=HTTPMethod,
+            headers=headers,
+            validate_certs=validate_certs,
+        )
+
+        password = response.read().decode('utf-8')
+
+        if not (password.startswith('"') and password.endswith('"')):
+            module.fail_json(
+                msg=(
+                    "Error while performing retrieve_password."
+                    "The returned value was not formatted as expected."
+                    "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+                ),
+                headers=headers,
+                status_code=http_exception.code,
+            )
+
+        password = password[1:-1]
+
+        result["password"] = password
+
+        logging.debug("Password Retrieved")
+
+        return (False, result, response.getcode())
+
+    except (HTTPError, HTTPException) as http_exception:
+
+        if isinstance(http_exception, HTTPError):
+            res = json.load(http_exception)
+        else:
+            res = to_text(http_exception)
+
+        module.fail_json(
+            msg=(
+                "Error while performing retrieve_password."
+                "Please validate parameters provided."
+                "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+            ),
+            headers=headers,
+            status_code=http_exception.code,
+        )
+
+    except Exception as unknown_exception:
+
+        module.fail_json(
+            msg=(
+                "Unknown error while performing retrieve_password."
+                "\n*** end_point=%s%s\n%s"
+                % (api_base_url, end_point, to_text(unknown_exception))
+            ),
+            headers=headers,
+            status_code=-1,
+        )
+
+
 def main():
 
     fields = {
         "state": {
             "type": "str",
-            "choices": ["present", "absent"],
+            "choices": ["present", "absent", "retrieve"],
             "default": "present",
         },
         "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
@@ -1311,6 +1398,9 @@ def main():
 
     elif found and state == "absent":
         (changed, result, status_code) = delete_account(module, account_record)
+
+    elif found and state == "retrieve":
+        (changed, result, status_code) = retrieve_password(module, account_record)
 
     module.exit_json(changed=changed, result=result, status_code=status_code)
 

@@ -283,6 +283,16 @@ options:
         cyberark_session: "{{ cyberark_session }}"
       register: updateaccount
 
+    - name: Retrieve account and password
+      cyberark.pas.cyberark_account:
+        identified_by: "address,username"
+        safe: "Domain_Admins"
+        address: "prod.cyberark.local"
+        username: "admin"
+        state: retrieve
+        cyberark_session: "{{ cyberark_session }}"
+      register: retrieveaccount
+
     - name: Logoff from CyberArk Vault
       cyberark.pas.cyberark_authentication:
         state: absent
