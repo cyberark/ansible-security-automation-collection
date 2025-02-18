@@ -118,17 +118,23 @@ options:
         required: false
         default: true
         type: bool
+    timeout:
+        description:
+            - An integer value of seconds of the allowed time before the requests fail because of a timeout.
+        type: int
+        default: 30
+        required: false
     cyberark_session:
         description:
             - Dictionary set by a CyberArk authentication containing the different values to perform actions on a logged-on CyberArk session, please see M(cyberark_authentication) module for an example of cyberark_session.
         required: true
         type: dict
-    identified_by: 
+    identified_by:
         description:
             - When an API call is made to Get Accounts, often times the default parameters passed will identify more than one account. This parameter is used to confidently identify a single account when the default query can return multiple results.
         required: false
         default: username,address,platform_id
-        type: str        
+        type: str
     safe:
         description:
             - The safe in the Vault where the privileged account is to be located
@@ -204,7 +210,7 @@ options:
             suboptions:
                 remote_machines:
                     description:
-                        - List of targets allowed for this account 
+                        - List of targets allowed for this account
                     type: str
                 access_restricted_to_remote_machines:
                     description:
@@ -253,7 +259,7 @@ options:
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-    
+
     - name: Rotate credential via reconcile and providing the password to be changed to
       cyberark.pas.cyberark_account:
         identified_by: "address,username"
@@ -270,7 +276,7 @@ options:
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: reconcileaccount
-    
+
     - name: Update password only in VAULT
       cyberark.pas.cyberark_account:
         identified_by: "address,username"
