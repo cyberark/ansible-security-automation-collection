@@ -7,7 +7,7 @@ authors:
     - Edward Nunez (@enunez-cyberark)
     - Joe Garcia (@infamousjoeg)
 description: "This is a Collection of the CyberArk Ansible Security Automation toolkit."
-license: "MIT"
+license: ["MIT"]
 tags:
   - cyberark
   - access

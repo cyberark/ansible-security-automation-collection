@@ -1,5 +1,10 @@
 ## 1.0.30
 
+- Changed in cyberark_authentication module to not reveal payload on failure
+
+
+## 1.0.30
+
 - Added ability to retrieve password
 
 ## 1.0.29
