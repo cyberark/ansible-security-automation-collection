@@ -1,4 +1,4 @@
-## 1.0.30
+## 1.0.31
 
 - Changed in cyberark_authentication module to not reveal payload on failure
 
