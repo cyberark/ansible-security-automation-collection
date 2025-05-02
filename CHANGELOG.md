@@ -1,7 +1,10 @@
+## 1.0.32
+
+- Fixed tags in GitHub
+
 ## 1.0.31
 
 - Changed in cyberark_authentication module to not reveal payload on failure
-
 
 ## 1.0.30
 
