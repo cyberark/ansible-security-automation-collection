@@ -231,12 +231,15 @@ def retrieve_credential(module):
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
+    use_gssapi = None
     path = "/AIMWebService/api/Accounts"
 
     if "client_cert" in module.params:
         client_cert = module.params["client_cert"]
     if "client_key" in module.params:
         client_key = module.params["client_key"]
+    if "use_gssapi" in module.params:
+        use_gssapi = module.params["use_gssapi"]
 
     if "path" in module.params:
         path = module.params["path"]
@@ -269,6 +272,7 @@ def retrieve_credential(module):
             validate_certs=validate_certs,
             client_cert=client_cert,
             client_key=client_key,
+            use_gssapi=use_gssapi,
         )
 
     except (HTTPError, HTTPException) as http_exception:
@@ -335,6 +339,8 @@ def main():
         "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False, "no_log": True},
+        "client_key": {"type": "str", "required": False, "no_log": True},
+        "use_gssapi": {"type": "bool", "required": False},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
