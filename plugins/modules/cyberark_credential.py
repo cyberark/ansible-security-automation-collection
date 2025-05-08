@@ -234,6 +234,7 @@ def retrieve_credential(module):
     connection_timeout = module.params["connection_timeout"]
     query_format = module.params["query_format"]
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
+    use_gssapi = module.params["use_gssapi"]
     client_cert = None
     client_key = None
     path = "/AIMWebService/api/Accounts"
