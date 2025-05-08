@@ -236,15 +236,12 @@ def retrieve_credential(module):
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
-    use_gssapi = None
     path = "/AIMWebService/api/Accounts"
 
     if "client_cert" in module.params:
         client_cert = module.params["client_cert"]
     if "client_key" in module.params:
         client_key = module.params["client_key"]
-    if "use_gssapi" in module.params:
-        use_gssapi = module.params["use_gssapi"]
 
     if "path" in module.params:
         path = module.params["path"]
