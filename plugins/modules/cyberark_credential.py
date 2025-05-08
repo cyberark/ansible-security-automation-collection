@@ -103,7 +103,11 @@ options:
         required: false
         description:
             - String override for the context path
-
+    use_gssapi:
+        type: str
+        required: false
+        description:
+            - A boolean parameter for using GSSAPI authentication for the specified path
 """
 
 EXAMPLES = """
