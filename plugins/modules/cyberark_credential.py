@@ -106,6 +106,7 @@ options:
     use_gssapi:
         type: str
         required: false
+        default: false
         description:
             - A boolean parameter for using GSSAPI authentication for the specified path
 """
@@ -344,7 +345,7 @@ def main():
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False, "no_log": True},
         "client_key": {"type": "str", "required": False, "no_log": True},
-        "use_gssapi": {"type": "bool", "required": False},
+        "use_gssapi": {"type": "bool", "default": False},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
