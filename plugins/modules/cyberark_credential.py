@@ -103,7 +103,12 @@ options:
         required: false
         description:
             - String override for the context path
-
+    use_gssapi:
+        type: str
+        required: false
+        default: false
+        description:
+            - A boolean parameter for using GSSAPI authentication for the specified path
 """
 
 EXAMPLES = """
@@ -227,6 +232,7 @@ def retrieve_credential(module):
     connection_timeout = module.params["connection_timeout"]
     query_format = module.params["query_format"]
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
+    use_gssapi = module.params["use_gssapi"]
     client_cert = None
     client_key = None
     path = "/AIMWebService/api/Accounts"
@@ -267,6 +273,7 @@ def retrieve_credential(module):
             validate_certs=validate_certs,
             client_cert=client_cert,
             client_key=client_key,
+            use_gssapi=use_gssapi,
         )
 
     except (HTTPError, HTTPException) as http_exception:
@@ -333,6 +340,8 @@ def main():
         "validate_certs": {"type": "bool", "default": True},
         "client_cert": {"type": "str", "required": False},
         "client_key": {"type": "str", "required": False, "no_log": True},
+        "client_key": {"type": "str", "required": False, "no_log": True},
+        "use_gssapi": {"type": "bool", "default": False},
     }
 
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
