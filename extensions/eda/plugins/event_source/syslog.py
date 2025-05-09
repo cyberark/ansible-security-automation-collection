@@ -22,9 +22,7 @@ BASIC_CEF_HEADER_SIZE = 6
 
 
 def parse(str_input: str) -> dict[str, str]:
-    """Parse a string in CEF format and return a dict with the header values
-    and the extension data.
-    """
+    """Parse a string in CEF format and return a dict with header values and extension data."""
     logger = logging.getLogger()
     # Create the empty dict we'll return later
     values = {}
@@ -113,15 +111,15 @@ class SyslogProtocol(asyncio.DatagramProtocol):
         self.edaQueue = edaqueue
         self.transport = None
 
-    def connection_made(self, transport) -> None:
+    def connection_made(self, transport: asyncio.DatagramTransport) -> None:
         """connection_made: Standard for asyncio."""
         self.transport = transport
 
-    def datagram_received(self, data, addr) -> None:
+    def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
         """datagram_received: Standard method for protocol."""
         asyncio.get_event_loop().create_task(self.datagram_received_async(data, addr))
 
-    async def datagram_received_async(self, indata, addr) -> None:
+    async def datagram_received_async(self, indata: Any, addr: Any) -> None:
         """datagram_received_async: Standard method for protocol."""
         # Syslog event data received, and processed for EDA
         logger = logging.getLogger()
@@ -134,10 +132,10 @@ class SyslogProtocol(asyncio.DatagramProtocol):
             try:
                 value = rcvdata[rcvdata.index("{"):len(rcvdata)]
                 data = json.loads(value)
-            except json.decoder.JSONDecodeError:   # noqa: F841
+            except json.decoder.JSONDecodeError:
                 logger.exception("JSON Decode Error")
                 data = rcvdata
-            except UnicodeError:   # noqa: F841
+            except UnicodeError:
                 logger.exception("UnicodeError")
 
         if data:

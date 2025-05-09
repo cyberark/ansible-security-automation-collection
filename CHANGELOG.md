@@ -1,3 +1,7 @@
+## 1.0.34
+
+- Fixed ruff and additional lint issues
+
 ## 1.0.33
 
 - Fixed pylint issues

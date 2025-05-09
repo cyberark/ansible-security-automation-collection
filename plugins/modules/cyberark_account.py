@@ -202,7 +202,7 @@ options:
 
 EXAMPLES = """
 - name: Logon to CyberArk Vault using PAS Web Services SDK
-    cyberark_authentication:
+  cyberark_authentication:
     api_base_url: "http://components.cyberark.local"
     validate_certs: false
     username: "bizdev"

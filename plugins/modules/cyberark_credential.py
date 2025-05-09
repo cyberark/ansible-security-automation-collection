@@ -108,7 +108,7 @@ options:
 
 EXAMPLES = """
 - name: credential retrieval basic
-    cyberark_credential:
+  cyberark_credential:
     api_base_url: "http://10.10.0.1"
     app_id: "TestID"
     query: "Safe=test;UserName=admin"
