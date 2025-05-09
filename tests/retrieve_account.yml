@@ -1,13 +1,11 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Retrieve account from CyberArk
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
         validate_certs: false
         username: "bizdev"
@@ -25,10 +23,10 @@
       register: retrieveaccount
 
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: retrieveaccount
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"

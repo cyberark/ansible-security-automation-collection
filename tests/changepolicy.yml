@@ -1,25 +1,22 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Change Account Policy
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
-        validate_certs: false
         username: "bizdev"
         password: "Cyberark1"
 
 
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberark_session
 
     - name: Account
-      cyberark_account:
+      cyberark.pas.cyberark_account:
         identified_by: "address,username"
         safe: "Test"
         address: "cyberark.local"
@@ -27,15 +24,16 @@
         platform_id: WinDomain-Level2
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-      
+
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberarkaction
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
 
     - name: Debug message
-      debug: var=cyberark_session
+      ansible.builtin.debug:
+        var: cyberark_session

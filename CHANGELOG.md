@@ -1,5 +1,9 @@
 ## 1.0.32
 
+- Fixed pylint issues
+
+## 1.0.32
+
 - Fixed tags in GitHub
 
 ## 1.0.31

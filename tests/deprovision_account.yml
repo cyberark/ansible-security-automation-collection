@@ -1,13 +1,11 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Deprovision CyberArk Account
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
         validate_certs: false
         username: "bizdev"
@@ -15,11 +13,11 @@
 
 
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberark_session
 
     - name: Account
-      cyberark_account:
+      cyberark.pas.cyberark_account:
         logging_level: DEBUG
         identified_by: "address,username"
         safe: "Test"
@@ -28,15 +26,16 @@
         state: absent
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-      
+
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberarkaction
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
 
     - name: Debug message
-      debug: var=cyberark_session
+      ansible.builtin.debug:
+        var: cyberark_session

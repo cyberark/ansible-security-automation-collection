@@ -13,17 +13,16 @@ from __future__ import (absolute_import, division, print_function)
 import asyncio
 import json
 import logging
-from typing import Any, Dict
 import re
+from typing import Any
 
 
 __metaclass__ = type
 BASIC_CEF_HEADER_SIZE = 6
 
-def parse(str_input: str) -> dict[str, str]:
-    """parse.
 
-    Parse a string in CEF format and return a dict with the header values
+def parse(str_input: str) -> dict[str, str]:
+    """Parse a string in CEF format and return a dict with the header values
     and the extension data.
     """
     logger = logging.getLogger()
@@ -33,7 +32,7 @@ def parse(str_input: str) -> dict[str, str]:
     # This regex separates the string into the CEF header and the extension
     # data.  Once we do this, it's easier to use other regexes to parse each
     # part.
-    header_re = r'((CEF:\d+)([^=\\]+\|){,7})(.*)'
+    header_re = r"((CEF:\d+)([^=\\]+\|){,7})(.*)"
 
     res = re.search(header_re, str_input)
 
@@ -44,7 +43,7 @@ def parse(str_input: str) -> dict[str, str]:
         # Split the header on the "|" char.  Uses a negative lookbehind
         # assertion to ensure we don't accidentally split on escaped chars,
         # though.
-        spl = re.split(r'(?<!\\)\|', header)
+        spl = re.split(r"(?<!\\)\|", header)
 
         # If the input entry had any blanks in the required headers, that's wrong
         # and we should return.  Note we explicitly don't check the last item in the
@@ -70,16 +69,16 @@ def parse(str_input: str) -> dict[str, str]:
         # "CEF:#".  Ignore anything before that (like a date from a syslog message).
         # We then split on the colon and use the second value as the
         # version number.
-        cef_start = spl[0].find('CEF')
+        cef_start = spl[0].find("CEF")
         if cef_start == -1:
             return None
-        (_, version) = spl[0][cef_start:].split(':')
+        (_, version) = spl[0][cef_start:].split(":")   # pylint: disable=disallowed-name
         values["CEFVersion"] = version
 
         # The ugly, gnarly regex here finds a single key=value pair,
         # taking into account multiple whitespaces, escaped '=' and '|'
         # chars.  It returns an iterator of tuples.
-        spl = re.findall(r'([^=\s]+)=((?:[\\]=|[^=])+)(?:\s|$)', extension)
+        spl = re.findall(r"([^=\s]+)=((?:[\\]=|[^=])+)(?:\s|$)", extension)
         for i in spl:
             # Split the tuples and put them into the dictionary
             values[i[0]] = i[1]
@@ -104,6 +103,7 @@ def parse(str_input: str) -> dict[str, str]:
     logger.debug("Returning values: %s", str(values))
     return values
 
+
 class SyslogProtocol(asyncio.DatagramProtocol):
     """Provides Syslog Protocol functionality."""
 
@@ -113,15 +113,15 @@ class SyslogProtocol(asyncio.DatagramProtocol):
         self.edaQueue = edaqueue
         self.transport = None
 
-    def connection_made(self, transport) -> "Used by asyncio":
+    def connection_made(self, transport) -> None:
         """connection_made: Standard for asyncio."""
         self.transport = transport
 
-    def datagram_received(self, data, addr) -> "Used by asyncio":
+    def datagram_received(self, data, addr) -> None:
         """datagram_received: Standard method for protocol."""
         asyncio.get_event_loop().create_task(self.datagram_received_async(data, addr))
 
-    async def datagram_received_async(self, indata, addr) -> "Main entry for processing message":
+    async def datagram_received_async(self, indata, addr) -> None:
         """datagram_received_async: Standard method for protocol."""
         # Syslog event data received, and processed for EDA
         logger = logging.getLogger()
@@ -134,10 +134,10 @@ class SyslogProtocol(asyncio.DatagramProtocol):
             try:
                 value = rcvdata[rcvdata.index("{"):len(rcvdata)]
                 data = json.loads(value)
-            except json.decoder.JSONDecodeError as jerror: # noqa: F841
+            except json.decoder.JSONDecodeError:   # noqa: F841
                 logger.exception("JSON Decode Error")
                 data = rcvdata
-            except UnicodeError as e: # noqa: F841
+            except UnicodeError:   # noqa: F841
                 logger.exception("UnicodeError")
 
         if data:
@@ -145,14 +145,14 @@ class SyslogProtocol(asyncio.DatagramProtocol):
             await queue.put({"cyberark": data})
 
 
-async def main(queue: asyncio.Queue, args: Dict[str, Any]):
+async def main(queue: asyncio.Queue, args: dict[str, Any]):
     """Perform main functionality."""
     logger = logging.getLogger()
 
-    _ = asyncio.get_event_loop()
-    host = args.get("host") or '0.0.0.0'
+    _ = asyncio.get_event_loop()   # pylint: disable=disallowed-name
+    host = args.get("host") or "0.0.0.0"
     port = args.get("port") or 1514
-    transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(
+    transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(   # pylint: disable=disallowed-name
         lambda: SyslogProtocol(queue),
         local_addr=((host, port)))
     logger.info("Starting cyberark.pas.syslog [Host=%s, port=%s]", host, port)

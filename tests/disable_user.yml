@@ -1,31 +1,29 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Disable a CyberArk User
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
         validate_certs: false
         username: "bizdev"
         password: "Cyberark1"
 
     - name: Disabling a CyberArk User
-      cyberark_user:
+      cyberark.pas.cyberark_user:
         username: "ansibleuser"
         disabled: true
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-        
+
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberarkaction
 
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"

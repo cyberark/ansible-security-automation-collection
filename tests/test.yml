@@ -1,13 +1,11 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Manage CyberArk Vault
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
         validate_certs: false
         username: "bizdev"
@@ -15,11 +13,11 @@
 
 
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberark_session
 
     - name: User
-      cyberark_user:
+      cyberark.pas.cyberark_user:
         username: "testuser"
         initial_password: "Cyberark1"
         user_type_name: "EPVUser"
@@ -29,13 +27,13 @@
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-        
+
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberarkaction
 
     - name: Account
-      cyberark_account:
+      cyberark.pas.cyberark_account:
 #         logging_level: DEBUG
         identified_by: "address,username"
         name: "EDWARD_ACCOUNT"
@@ -44,22 +42,23 @@
         username: "james_test"
         platform_id: WinServerLocal
         platform_account_properties:
-            LogonDomain: "10.0.1.20"
+          LogonDomain: "10.0.1.20"
         secret_management:
-            automatic_management_enabled: false
-            manual_management_reason: "No Reason"
+          automatic_management_enabled: false
+          manual_management_reason: "No Reason"
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: cyberarkaction
-      
+
     - name: Debug message
-      debug:
+      ansible.builtin.debug:
         var: cyberarkaction
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
 
     - name: Debug message
-      debug: var=cyberark_session
+      ansible.builtin.debug:
+        var: cyberark_session
