@@ -1,3 +1,7 @@
+## 1.0.35
+
+- Cleaned all tox issues (ruff, pylint, darglint)
+
 ## 1.0.34
 
 - Fixed ruff and additional lint issues

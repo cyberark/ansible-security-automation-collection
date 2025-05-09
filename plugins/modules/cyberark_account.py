@@ -202,14 +202,14 @@ options:
 
 EXAMPLES = """
 - name: Logon to CyberArk Vault using PAS Web Services SDK
-  cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     api_base_url: "http://components.cyberark.local"
     validate_certs: false
     username: "bizdev"
     password: "Cyberark1"
 
 - name: Creating an Account using the PAS WebServices SDK
-    cyberark_account:
+  cyberark.pas.cyberark_account:
     logging_level: DEBUG
     identified_by: "address,username"
     safe: "Test"
@@ -227,7 +227,7 @@ EXAMPLES = """
     register: cyberarkaction
 
 - name: Rotate credential via reconcile and providing the password to be changed to
-    cyberark_account:
+  cyberark.pas.cyberark_account:
     identified_by: "address,username"
     safe: "Domain_Admins"
     address: "prod.cyberark.local"
@@ -244,7 +244,7 @@ EXAMPLES = """
     register: reconcileaccount
 
 - name: Update password only in VAULT
-    cyberark.pas.cyberark_account:
+  cyberark.pas.cyberark_account:
     identified_by: "address,username"
     safe: "Domain_Admins"
     address: "prod.cyberark.local"
@@ -256,7 +256,7 @@ EXAMPLES = """
     register: updateaccount
 
 - name: Retrieve account and password
-    cyberark.pas.cyberark_account:
+  cyberark.pas.cyberark_account:
     identified_by: "address,username"
     safe: "Domain_Admins"
     address: "prod.cyberark.local"
@@ -266,7 +266,7 @@ EXAMPLES = """
     register: retrieveaccount
 
 - name: Logoff from CyberArk Vault
-    cyberark_authentication:
+  cyberark.pas.cyberark_authentication:
     state: absent
     cyberark_session: "{{ cyberark_session }}"
 """
@@ -1240,7 +1240,7 @@ def retrieve_password(module, existing_account):
                     "\n*** end_point=%s%s\n" % (api_base_url, end_point)
                 ),
                 headers=headers,
-                status_code=http_exception.code,
+                status_coode=-1
             )
 
         password = password[1:-1]

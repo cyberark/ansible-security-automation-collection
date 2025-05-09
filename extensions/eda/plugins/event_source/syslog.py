@@ -21,8 +21,12 @@ __metaclass__ = type
 BASIC_CEF_HEADER_SIZE = 6
 
 
-def parse(str_input: str) -> dict[str, str]:
-    """Parse a string in CEF format and return a dict with header values and extension data."""
+def parse(str_input: str) -> dict[str, str]:  # pylint: disable=unsubscriptable-object
+    """Parse a string in CEF format and return a dict with header values and extension data.
+
+    # noqa: DAR201
+    # noqa: DAR101
+    """
     logger = logging.getLogger()
     # Create the empty dict we'll return later
     values = {}
@@ -106,21 +110,33 @@ class SyslogProtocol(asyncio.DatagramProtocol):
     """Provides Syslog Protocol functionality."""
 
     def __init__(self, edaqueue: asyncio.Queue) -> None:
-        """Init Constructor."""
+        """Init Constructor.
+
+        # noqa: DAR101
+        """
         super().__init__()
         self.edaQueue = edaqueue
         self.transport = None
 
     def connection_made(self, transport: asyncio.DatagramTransport) -> None:
-        """connection_made: Standard for asyncio."""
+        """connection_made: Standard for asyncio.
+
+        # noqa: DAR101
+        """
         self.transport = transport
 
-    def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
-        """datagram_received: Standard method for protocol."""
+    def datagram_received(self, data: bytes, addr: Any) -> None:  # pylint: disable=unsubscriptable-object
+        """datagram_received: Standard method for protocol.
+
+        # noqa: DAR101
+        """
         asyncio.get_event_loop().create_task(self.datagram_received_async(data, addr))
 
     async def datagram_received_async(self, indata: Any, addr: Any) -> None:
-        """datagram_received_async: Standard method for protocol."""
+        """datagram_received_async: Standard method for protocol.
+
+        # noqa: DAR101
+        """
         # Syslog event data received, and processed for EDA
         logger = logging.getLogger()
         rcvdata = indata.decode()
@@ -143,8 +159,11 @@ class SyslogProtocol(asyncio.DatagramProtocol):
             await queue.put({"cyberark": data})
 
 
-async def main(queue: asyncio.Queue, args: dict[str, Any]):
-    """Perform main functionality."""
+async def main(queue: asyncio.Queue, args: dict[str, Any]) -> None:  # pylint: disable=unsubscriptable-object
+    """Perform main functionality.
+
+    # noqa: DAR101
+    """
     logger = logging.getLogger()
 
     _ = asyncio.get_event_loop()   # pylint: disable=disallowed-name
@@ -156,7 +175,7 @@ async def main(queue: asyncio.Queue, args: dict[str, Any]):
     logger.info("Starting cyberark.pas.syslog [Host=%s, port=%s]", host, port)
     try:
         while True:
-            await asyncio.sleep(3600)  # Serve for 1 hour.
+            await asyncio.sleep(3600)
     finally:
         transport.close()
 
@@ -166,7 +185,10 @@ if __name__ == "__main__":
     class MockQueue:
         """simple mock queue."""
 
-        async def put(self, event) -> None:
-            """put: Put method."""
+        async def put(self, event: Any) -> None:
+            """put: Put method.
+
+            # noqa: DAR101
+            """
 
     asyncio.run(main(MockQueue(), {}))
