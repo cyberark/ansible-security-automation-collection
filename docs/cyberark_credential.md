@@ -97,7 +97,7 @@ options:
 
 ```yaml
 - name: credential retrieval basic
-  cyberark_credential:
+  cyberark.pas.cyberark_credential:
     api_base_url: "http://10.10.0.1"
     app_id: "TestID"
     query: "Safe=test;UserName=admin"
@@ -108,7 +108,7 @@ options:
      
      
 - name: credential retrieval advanced
-  cyberark_credential:
+  cyberark.pas.cyberark_credential:
     api_base_url: "https://components.cyberark.local"
     validate_certs: true
     client_cert: /etc/pki/ca-trust/source/client.pem
