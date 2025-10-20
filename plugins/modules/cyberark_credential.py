@@ -36,6 +36,11 @@ options:
         description:
             - A string containing the base URL of the server hosting the
               Central Credential Provider.
+    path:
+        type: str
+        required: false
+        description:
+            - A string containing the path for the AIM service Accounts API.
     validate_certs:
         type: bool
         required: false
@@ -309,6 +314,7 @@ def main():
 
     fields = {
         "api_base_url": {"required": True, "type": "str"},
+        "path": {"required": False, "type": "str", "default": "/AIMWebService/api/Accounts"},
         "app_id": {"required": True, "type": "str"},
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},
