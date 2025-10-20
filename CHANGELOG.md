@@ -1,3 +1,7 @@
+## 1.0.36
+
+- Added path as a valid parameter for module spec args
+
 ## 1.0.35
 
 - Cleaned all tox issues (ruff, pylint, darglint)
