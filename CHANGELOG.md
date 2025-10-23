@@ -1,3 +1,7 @@
+## 1.0.37
+
+- Cleaning PEP8 issues
+
 ## 1.0.36
 
 - Added path as a valid parameter for module spec args

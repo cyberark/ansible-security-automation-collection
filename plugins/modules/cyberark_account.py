@@ -218,8 +218,8 @@ EXAMPLES = """
     platform_id: WinServerLocal
     secret: "@N&Ibl3!"
     platform_account_properties:
-        LogonDomain: "cyberark"
-        OwnerName: "ansible_user"
+      LogonDomain: "cyberark"
+      OwnerName: "ansible_user"
     secret_management:
         automatic_management_enabled: true
     state: present
@@ -234,11 +234,11 @@ EXAMPLES = """
     username: "admin"
     platform_id: WinDomain
     platform_account_properties:
-        LogonDomain: "PROD"
+      LogonDomain: "PROD"
     secret_management:
-        new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
-        management_action: "reconcile"
-        automatic_management_enabled: true
+      new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+      management_action: "reconcile"
+      automatic_management_enabled: true
     state: present
     cyberark_session: "{{ cyberark_session }}"
     register: reconcileaccount

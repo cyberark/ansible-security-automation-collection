@@ -74,8 +74,8 @@ def parse(str_input: str) -> dict[str, str]:  # pylint: disable=unsubscriptable-
         cef_start = spl[0].find("CEF")
         if cef_start == -1:
             return None
-        (_, version) = spl[0][cef_start:].split(":")   # pylint: disable=disallowed-name
-        values["CEFVersion"] = version
+        cefparts = spl[0][cef_start:].split(":")
+        values["CEFVersion"] = cefparts[1]
 
         # The ugly, gnarly regex here finds a single key=value pair,
         # taking into account multiple whitespaces, escaped '=' and '|'
@@ -166,7 +166,7 @@ async def main(queue: asyncio.Queue, args: dict[str, Any]) -> None:  # pylint: d
     """
     logger = logging.getLogger()
 
-    _ = asyncio.get_event_loop()   # pylint: disable=disallowed-name
+    asyncio.get_event_loop()   # pylint: disable=disallowed-name
     host = args.get("host") or "0.0.0.0"
     port = args.get("port") or 1514
     transport, _ = await asyncio.get_running_loop().create_datagram_endpoint(   # pylint: disable=disallowed-name
