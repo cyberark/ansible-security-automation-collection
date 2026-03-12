@@ -36,6 +36,12 @@ options:
         description:
             - A string containing the base URL of the server hosting the
               Central Credential Provider.
+    path:
+        type: str
+        required: false
+        default: /AIMWebService/api/Accounts
+        description:
+            - A string containing the path for the AIM service Accounts API.
     validate_certs:
         type: bool
         required: false
@@ -98,37 +104,29 @@ options:
             - Reason for requesting credential if required by policy;
             - It must be specified if the Policy managing the object
             - requires it.
-    path:
-        type: str
-        required: false
-        description:
-            - String override for the context path
-
 """
 
 EXAMPLES = """
-  tasks:
-    - name: credential retrieval basic
-      cyberark_credential:
-        api_base_url: "http://10.10.0.1"
-        app_id: "TestID"
-        query: "Safe=test;UserName=admin"
-      register: result
+- name: credential retrieval basic
+  cyberark.pas.cyberark_credential:
+    api_base_url: "http://10.10.0.1"
+    app_id: "TestID"
+    query: "Safe=test;UserName=admin"
+    register: result
 
-    - name: credential retrieval advanced
-      cyberark_credential:
-        api_base_url: "https://components.cyberark.local"
-        validate_certs: true
-        client_cert: /etc/pki/ca-trust/source/client.pem
-        client_key: /etc/pki/ca-trust/source/priv-key.pem
-        app_id: "TestID"
-        query: "Safe=test;UserName=admin"
-        connection_timeout: 60
-        query_format: Exact
-        fail_request_on_password_change: true
-        reason: "requesting credential for Ansible deployment"
-      register: result
-
+- name: credential retrieval advanced
+  cyberark.pas.cyberark_credential:
+    api_base_url: "https://components.cyberark.local"
+    validate_certs: true
+    client_cert: /etc/pki/ca-trust/source/client.pem
+    client_key: /etc/pki/ca-trust/source/priv-key.pem
+    app_id: "TestID"
+    query: "Safe=test;UserName=admin"
+    connection_timeout: 60
+    query_format: Exact
+    fail_request_on_password_change: true
+    reason: "requesting credential for Ansible deployment"
+    register: result
 """
 
 RETURN = """
@@ -231,15 +229,13 @@ def retrieve_credential(module):
     fail_request_on_password_change = module.params["fail_request_on_password_change"]
     client_cert = None
     client_key = None
-    path = "/AIMWebService/api/Accounts"
 
     if "client_cert" in module.params:
         client_cert = module.params["client_cert"]
     if "client_key" in module.params:
         client_key = module.params["client_key"]
 
-    if "path" in module.params:
-        path = module.params["path"]
+    path = module.params["path"]
 
     end_point = (
         "%s?AppId=%s&Query=%s&"
@@ -317,6 +313,7 @@ def main():
 
     fields = {
         "api_base_url": {"required": True, "type": "str"},
+        "path": {"required": False, "type": "str", "default": "/AIMWebService/api/Accounts"},
         "app_id": {"required": True, "type": "str"},
         "query": {"required": True, "type": "str"},
         "reason": {"required": False, "type": "str"},

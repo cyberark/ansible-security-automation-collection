@@ -208,82 +208,77 @@ options:
 """
 
 EXAMPLES = """
-  collections:
-    - cyberark.pas
+- name: Logon to CyberArk Vault using PAS Web Services SDK
+  cyberark.pas.cyberark_authentication:
+    api_base_url: "http://components.cyberark.local"
+    validate_certs: false
+    username: "bizdev"
+    password: "Cyberark1"
 
-  tasks:
+- name: Creating an Account using the PAS WebServices SDK
+  cyberark.pas.cyberark_account:
+    logging_level: DEBUG
+    identified_by: "address,username"
+    safe: "Test"
+    address: "cyberark.local"
+    username: "administrator-x"
+    timeout: 60
+    platform_id: WinServerLocal
+    secret: "@N&Ibl3!"
+    platform_account_properties:
+      LogonDomain: "cyberark"
+      OwnerName: "ansible_user"
+    secret_management:
+        automatic_management_enabled: true
+    state: present
+    cyberark_session: "{{ cyberark_session }}"
+    register: cyberarkaction
 
-    - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
-        api_base_url: "http://components.cyberark.local"
-        validate_certs: false
-        username: "bizdev"
-        password: "Cyberark1"
+- name: Rotate credential via reconcile and providing the password to be changed to
+  cyberark.pas.cyberark_account:
+    identified_by: "address,username"
+    safe: "Domain_Admins"
+    address: "prod.cyberark.local"
+    username: "admin"
+    platform_id: WinDomain
+    platform_account_properties:
+      LogonDomain: "PROD"
+    secret_management:
+      new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+      management_action: "reconcile"
+      automatic_management_enabled: true
+    state: present
+    cyberark_session: "{{ cyberark_session }}"
+    register: reconcileaccount
 
-    - name: Creating an Account using the PAS WebServices SDK
-      cyberark_account:
-        logging_level: DEBUG
-        identified_by: "address,username"
-        safe: "Test"
-        address: "cyberark.local"
-        username: "administrator-x"
-        timeout: 60
-        platform_id: WinServerLocal
-        secret: "@N&Ibl3!"
-        platform_account_properties:
-            LogonDomain: "cyberark"
-            OwnerName: "ansible_user"
-        secret_management:
-            automatic_management_enabled: true
-        state: present
-        cyberark_session: "{{ cyberark_session }}"
-      register: cyberarkaction
+- name: Update password only in VAULT
+  cyberark.pas.cyberark_account:
+    identified_by: "address,username"
+    safe: "Domain_Admins"
+    address: "prod.cyberark.local"
+    username: "admin"
+    platform_id: Generic
+    new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
+    state: present
+    cyberark_session: "{{ cyberark_session }}"
+    register: updateaccount
 
-    - name: Rotate credential via reconcile and providing the password to be changed to
-      cyberark_account:
-        identified_by: "address,username"
-        safe: "Domain_Admins"
-        address: "prod.cyberark.local"
-        username: "admin"
-        platform_id: WinDomain
-        platform_account_properties:
-            LogonDomain: "PROD"
-        secret_management:
-            new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
-            management_action: "reconcile"
-            automatic_management_enabled: true
-        state: present
-        cyberark_session: "{{ cyberark_session }}"
-      register: reconcileaccount
+- name: Retrieve account and password
+  cyberark.pas.cyberark_account:
+    identified_by: "address,username"
+    safe: "Domain_Admins"
+    address: "prod.cyberark.local"
+    username: "admin"
+    state: retrieve
+    cyberark_session: "{{ cyberark_session }}"
+    register: retrieveaccount
 
-    - name: Update password only in VAULT
-      cyberark.pas.cyberark_account:
-        identified_by: "address,username"
-        safe: "Domain_Admins"
-        address: "prod.cyberark.local"
-        username: "admin"
-        platform_id: Generic
-        new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
-        state: present
-        cyberark_session: "{{ cyberark_session }}"
-      register: updateaccount
-
-    - name: Retrieve account and password
-      cyberark.pas.cyberark_account:
-        identified_by: "address,username"
-        safe: "Domain_Admins"
-        address: "prod.cyberark.local"
-        username: "admin"
-        state: retrieve
-        cyberark_session: "{{ cyberark_session }}"
-      register: retrieveaccount
-
-    - name: Logoff from CyberArk Vault
-      cyberark_authentication:
-        state: absent
-        cyberark_session: "{{ cyberark_session }}"
-
+- name: Logoff from CyberArk Vault
+  cyberark.pas.cyberark_authentication:
+    state: absent
+    cyberark_session: "{{ cyberark_session }}"
 """
+
 RETURN = """
 changed:
     description:
@@ -1263,10 +1258,10 @@ def retrieve_password(module, existing_account):
                 msg=(
                     "Error while performing retrieve_password."
                     "The returned value was not formatted as expected."
-                    "\n*** end_point=%s%s\n ==> %s" % (api_base_url, end_point, res)
+                    "\n*** end_point=%s%s\n" % (api_base_url, end_point)
                 ),
                 headers=headers,
-                status_code=http_exception.code,
+                status_coode=-1
             )
 
         password = password[1:-1]
@@ -1279,6 +1274,7 @@ def retrieve_password(module, existing_account):
 
     except (HTTPError, HTTPException) as http_exception:
 
+        res = ''
         if isinstance(http_exception, HTTPError):
             res = json.load(http_exception)
         else:

@@ -200,7 +200,6 @@ def processAuthentication(module):
 
         if use_ldap:
             end_point = "/PasswordVault/API/Auth/LDAP/Logon"
-            payload_dict = {"username": username, "password": password}
 
         elif use_radius:
             end_point = "/PasswordVault/API/Auth/radius/Logon"
@@ -263,7 +262,6 @@ def processAuthentication(module):
                 "CyberArk.\n*** end_point=%s%s\n ==> %s"
             )
             % (api_base_url, end_point, to_text(http_exception)),
-            payload=payload,
             headers=headers,
             status_code=http_exception.code,
         )
@@ -276,7 +274,6 @@ def processAuthentication(module):
                 "\n*** end_point=%s%s\n%s"
                 % (api_base_url, end_point, to_text(unknown_exception))
             ),
-            payload=payload,
             headers=headers,
             status_code=-1,
         )

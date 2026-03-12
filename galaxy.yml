@@ -1,23 +1,23 @@
 namespace: "cyberark"
 name: "pas"
-version: "1.0.30"
+version: "1.0.37"
 readme: README.md
 authors:
     - CyberArk Business Development (@cyberark-bizdev)
     - Edward Nunez (@enunez-cyberark)
     - Joe Garcia (@infamousjoeg)
 description: "This is a Collection of the CyberArk Ansible Security Automation toolkit."
-license: "MIT"
+license: ["MIT"]
 tags:
-  - cyberark
-  - access
-  - security
-  - account
-  - epv
-  - vault
-  - identity
-  - credential
-  - secret
-  - privileged
+    - cyberark
+    - access
+    - security
+    - account
+    - epv
+    - vault
+    - identity
+    - credential
+    - secret
+    - privileged
 repository: "https://github.com/cyberark/ansible-security-automation-collection"
 issues: https://github.com/cyberark/ansible-security-automation-collection/issues

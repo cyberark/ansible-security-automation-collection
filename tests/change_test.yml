@@ -1,37 +1,32 @@
 ---
-- hosts: localhost
-
-  collections:
-    - cyberark.pas
+- name: Rotate Credential
+  hosts: localhost
 
   tasks:
 
     - name: Logon to CyberArk Vault using PAS Web Services SDK
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         api_base_url: "http://components.cyberark.local"
-        validate_certs: false
         username: "bizdev"
         password: "Cyberark1"
 
     - name: Rotate credential via reconcile and providing the password to be changed to
-      cyberark_account:
-        identified_by: "address,username"
+      cyberark.pas.cyberark_account:
         safe: "Test"
+        identified_by: "address,username"
         address: "prod.cyberark.local"
         username: "admin"
         platform_id: WinDomain
         platform_account_properties:
-            ReconcileAccount: "Operating System-WinServerLocal-cyberark.local-administrator-x"
-            LogonDomain: "PROD"
+          ReconcileAccount: "Operating System-WinServerLocal-cyberark.local-administrator-x"
+          LogonDomain: "PROD"
         secret_management:
-#            new_secret: "Ama123ah12@#!Xaamdjbdkl@#112"
-#            management_action: "reconcile"
-            automatic_management_enabled: true
+          automatic_management_enabled: true
         state: present
         cyberark_session: "{{ cyberark_session }}"
       register: reconcileaccount
 
     - name: Logoff from CyberArk Vault
-      cyberark_authentication:
+      cyberark.pas.cyberark_authentication:
         state: absent
         cyberark_session: "{{ cyberark_session }}"
