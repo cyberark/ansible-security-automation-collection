@@ -221,7 +221,7 @@ EXAMPLES = """
       LogonDomain: "cyberark"
       OwnerName: "ansible_user"
     secret_management:
-        automatic_management_enabled: true
+      automatic_management_enabled: true
     state: present
     cyberark_session: "{{ cyberark_session }}"
     register: cyberarkaction
