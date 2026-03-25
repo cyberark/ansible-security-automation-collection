@@ -1,3 +1,8 @@
+## 1.0.39
+- Red Hat Ansible Automation Platform is ending support for Ansible Core 2.15 and Python 3.11.
+- Tested compatibility with Ansible Core 2.16 and Python 3.12 or higher.
+- This release checkin shows all playbooks pass the tests on Ansible Core v2.19.0 with Python 3.12.3.
+
 ## 1.0.37
 
 - Cleaning PEP8 issues

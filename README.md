@@ -10,9 +10,13 @@ The collection includes [support for Event-Driven Ansible](https://github.com/cy
 
 ## Requirements
 
-- Ansible Core 2.13.x or above
+- Ansible Core 2.16.x or above
 - CyberArk Privileged Account Security Web Services SDK
 - CyberArk AAM Central Credential Provider (**Only required for cyberark_credential**)
+
+## Release Notes
+
+See the [CHANGELOG.md](./CHANGELOG.md) for a full list of changes and version history.
 
 ## Installation
 
