@@ -329,7 +329,7 @@ def main():
 
     fields = {
         "api_base_url": {"type": "str"},
-        "validate_certs": {"type": "bool", "default": "true"},
+        "validate_certs": {"type": "bool", "default": True},
         "username": {"type": "str"},
         "password": {"type": "str", "no_log": True},
         "new_password": {"type": "str", "no_log": True},

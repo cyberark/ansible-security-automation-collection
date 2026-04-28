@@ -1293,7 +1293,7 @@ def main():
         "logging_level": {"type": "str", "choices": ["NOTSET", "DEBUG", "INFO"]},
         "logging_file": {"type": "str", "default": "/tmp/ansible_cyberark.log"},
         "api_base_url": {"type": "str"},
-        "validate_certs": {"type": "bool", "default": "true"},
+        "validate_certs": {"type": "bool", "default": True},
         "cyberark_session": {"required": True, "type": "dict", "no_log": True},
         "identified_by": {
             "required": False,

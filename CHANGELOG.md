@@ -1,3 +1,6 @@
+## 1.0.40
+- Updated reference to CHANGELOG in README.md and fixed default value (True) for validate_certs
+
 ## 1.0.39
 - Red Hat Ansible Automation Platform is ending support for Ansible Core 2.15 and Python 3.11.
 - Tested compatibility with Ansible Core 2.16 and Python 3.12 or higher.

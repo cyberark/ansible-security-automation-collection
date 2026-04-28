@@ -16,7 +16,7 @@ The collection includes [support for Event-Driven Ansible](https://github.com/cy
 
 ## Release Notes
 
-See the [CHANGELOG.md](./CHANGELOG.md) for a full list of changes and version history.
+See the [CHANGELOG.md](https://github.com/cyberark/ansible-security-automation-collection/blob/master/CHANGELOG.md) for a full list of changes and version history.
 
 ## Installation
 
