@@ -127,6 +127,13 @@ options:
             - The username associated with the account.
         required: false
         type: str
+    timeout:
+        description:
+            - An integer value of seconds of the allowed time before the requests fail
+              because of a timeout.
+        type: int
+        default: 30
+        required: false
     secret_management:
         description:
             - Set of parameters associated with the management of the
@@ -215,6 +222,7 @@ EXAMPLES = """
     safe: "Test"
     address: "cyberark.local"
     username: "administrator-x"
+    timeout: 60
     platform_id: WinServerLocal
     secret: "@N&Ibl3!"
     platform_account_properties:
@@ -403,6 +411,7 @@ ansible_specific_parameters = [
     "state",
     "api_base_url",
     "validate_certs",
+    "timeout",
     "cyberark_session",
     "identified_by",
     "logging_level",
@@ -471,6 +480,7 @@ def update_account(module, existing_account):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    timeout = module.params["timeout"]
 
     # Prepare result, end_point, and headers
     result = {"result": existing_account}
@@ -655,6 +665,7 @@ def update_account(module, existing_account):
                         headers=headers,
                         data=json.dumps(individual_payload),
                         validate_certs=validate_certs,
+                        timeout=timeout,
                     )
 
                     result = {"result": json.loads(response.read())}
@@ -705,6 +716,7 @@ def add_account(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    timeout = module.params["timeout"]
 
     # Prepare result, end_point, and headers
     result = {}
@@ -793,6 +805,7 @@ def add_account(module):
                 headers=headers,
                 data=json.dumps(payload),
                 validate_certs=validate_certs,
+                timeout=timeout,
             )
 
             result = {"result": json.loads(response.read())}
@@ -842,6 +855,7 @@ def delete_account(module, existing_account):
         cyberark_session = module.params["cyberark_session"]
         api_base_url = cyberark_session["api_base_url"]
         validate_certs = cyberark_session["validate_certs"]
+        timeout = module.params["timeout"]
 
         # Prepare result, end_point, and headers
         result = {}
@@ -861,6 +875,7 @@ def delete_account(module, existing_account):
                 method=HTTPMethod,
                 headers=headers,
                 validate_certs=validate_certs,
+                timeout=timeout,
             )
 
             result = {"result": None}
@@ -902,6 +917,7 @@ def reset_account_if_needed(module, existing_account):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    timeout = module.params["timeout"]
 
     # Credential changes
     management_action = deep_get(
@@ -987,6 +1003,7 @@ def reset_account_if_needed(module, existing_account):
                     headers=headers,
                     data=json.dumps(payload),
                     validate_certs=validate_certs,
+                    timeout=timeout,
                 )
 
                 return (True, result, response.getcode())
@@ -1091,6 +1108,7 @@ def get_account(module):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    timeout = module.params["timeout"]
 
     end_point = None
     if search_string is not None and safe_filter is not None:
@@ -1119,6 +1137,7 @@ def get_account(module):
             method="GET",
             headers=headers,
             validate_certs=validate_certs,
+            timeout=timeout,
         )
 
         result_string = response.read()
@@ -1210,6 +1229,7 @@ def retrieve_password(module, existing_account):
     cyberark_session = module.params["cyberark_session"]
     api_base_url = cyberark_session["api_base_url"]
     validate_certs = cyberark_session["validate_certs"]
+    timeout = module.params["timeout"]
 
     result = existing_account
     HTTPMethod = "POST"
@@ -1228,6 +1248,7 @@ def retrieve_password(module, existing_account):
             method=HTTPMethod,
             headers=headers,
             validate_certs=validate_certs,
+            timeout=timeout,
         )
 
         password = response.read().decode('utf-8')
@@ -1313,6 +1334,7 @@ def main():
         "secret": {"required": False, "type": "str", "no_log": True},
         "new_secret": {"required": False, "type": "str", "no_log": True},
         "username": {"required": False, "type": "str"},
+        "timeout": {"required": False, "type": "int", "default": 30},
         "secret_management": {
             "required": False,
             "type": "dict",
